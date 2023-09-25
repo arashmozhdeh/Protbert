@@ -11,7 +11,13 @@ import plotly.express as px
 import pytorch_lightning as pl
 import torch
 from torch.functional import Tensor
+import torch
+from torch.utils.data.sampler import Sampler
+import random
 import torch.nn as nn
+import torch
+from torch.utils.data.sampler import Sampler
+import random
 
 from mlflow.tracking import MlflowClient
 from pytorch_lightning.utilities.model_summary import ModelSummary
@@ -19,10 +25,12 @@ from pytorch_lightning.utilities.enums import ModelSummaryMode
 from test_tube.argparse_hopt import TTNamespace
 from torch import optim
 from torch.optim.lr_scheduler import LambdaLR
+# from PPIDataset import BalancedFewShotSiameseSampler
 from torch.utils.data import DataLoader, RandomSampler
 from torchmetrics import (AUROC, F1Score, ROC, Accuracy, AveragePrecision,
                           MatthewsCorrCoef, Precision, PrecisionRecallCurve,
                           Recall, ConfusionMatrix)
+from torchmetrics.classification import BinaryAccuracy, BinaryPrecision, BinaryRecall
 from torchmetrics.collections import MetricCollection
 from torchnlp.encoders import LabelEncoder
 from torchnlp.utils import collate_tensors
@@ -31,7 +39,7 @@ from transformers.tokenization_utils_base import BatchEncoding
 from transformers.file_utils import TensorType
 
 import settings
-from data.PPIDataset import PPIDataset, Dataset
+from data.PPIDataset import PPIDataset, Dataset, FewShotSiameseSampler
 from utils.ProtBertPPIArgParser import ProtBertPPIArgParser
 
 class ProtBertPPIModel(pl.LightningModule):
@@ -93,26 +101,32 @@ class ProtBertPPIModel(pl.LightningModule):
         # self.dataset.calculate_stat(self.hparams.train_csv)
 
         self.train_metrics = MetricCollection([
-            Accuracy(task="multiclass", num_classes=2), 
-            # Precision(), 
-            # Recall(), 
-            # F1Score(),
-            # AveragePrecision(pos_label=1),
-            # AUROC(pos_label=1),
-            # MatthewsCorrCoef(num_classes=2),
+            BinaryAccuracy(), 
+            BinaryPrecision(), 
+            BinaryRecall(),
+            # Accuracy(task="multiclass", num_classes=2), 
+            # Precision(task="multiclass", num_classes=2), 
+            # Recall(task="multiclass", num_classes=2), 
+            # F1Score(task="multiclass", num_classes=2),
+            # AveragePrecision(task="multiclass", num_classes=2),
+            # AUROC(task="multiclass", num_classes=2),
+            # MatthewsCorrCoef(task="multiclass", num_classes=2),
         ], prefix='train_')
 
         self.valid_metrics = MetricCollection([
-            Accuracy(task="multiclass", num_classes=2), 
-            # Precision(), 
-            # Recall(), 
-            # F1Score(),
-            # AveragePrecision(pos_label=1),
-            # ConfusionMatrix(num_classes=2,),
-            # PrecisionRecallCurve(pos_label=1),
-            # AUROC(pos_label=1,average=None),
-            # ROC(pos_label=1),
-            # MatthewsCorrCoef(num_classes=2),
+            BinaryAccuracy(), 
+            BinaryPrecision(), 
+            BinaryRecall(),
+            # Accuracy(task="multiclass", num_classes=2), 
+            # Precision(task="multiclass", num_classes=2), 
+            # Recall(task="multiclass", num_classes=2), 
+            # F1Score(task="multiclass", num_classes=2),
+            # AveragePrecision(task="multiclass", num_classes=2),
+            # ConfusionMatrix(task="multiclass", num_classes=2),
+            # PrecisionRecallCurve(task="multiclass", num_classes=2),
+            # AUROC(task="multiclass", num_classes=2, average=None),
+            # ROC(task="multiclass", num_classes=2),
+            # MatthewsCorrCoef(task="multiclass", num_classes=2),
         ], prefix='val_')
 
         self.test_metrics = self.valid_metrics.clone(prefix="test_")
@@ -312,9 +326,16 @@ class ProtBertPPIModel(pl.LightningModule):
             self.local_logger.info("Training started, check out run: %s", settings.MLFLOW_TRACKING_URI + "/#/experiments/" + self.logger.experiment_id + "/runs/" + self.logger.run_id)
 
     def __single_step(self, batch):
+        # print("batch", batch)
         inputs_A, inputs_B, targets = batch
-        model_out_A = self.forward(**inputs_A)
-        model_out_B = self.forward(**inputs_B)
+        inputs_A = inputs_A.to('cuda')
+        inputs_B = inputs_B.to('cuda')
+        for key in targets:
+            targets[key] = targets[key].to('cuda')
+        # print("type(inputs_A)", type(inputs_A))
+        # print("inputs_A",inputs_A)
+        model_out_A = self.forward(**inputs_A).to('cuda')
+        model_out_B = self.forward(**inputs_B).to('cuda')
         classifier_output = self.classifier(model_out_A, model_out_B)
 
         loss = self.loss_bce_with_integrated_sigmoid(classifier_output, targets)
@@ -439,9 +460,13 @@ class ProtBertPPIModel(pl.LightningModule):
         self.current_test_epoch += 1
 
     def predict_step(self, batch: tuple, batch_nb: int, *args, **kwargs) -> dict:
-        inputs_A, inputs_B, collated_samples = batch
-        model_out_A = self.forward(**inputs_A)
-        model_out_B = self.forward(**inputs_B)
+        inputs_A, inputs_B, targets = batch
+        inputs_A = inputs_A.to('cuda')
+        inputs_B = inputs_B.to('cuda')
+        for key in targets:
+            targets[key] = targets[key].to('cuda')
+        model_out_A = self.forward(**inputs_A).to('cuda')
+        model_out_B = self.forward(**inputs_B).to('cuda')
         classifier_output = self.classifier(model_out_A, model_out_B)
 
         preds = classifier_output["logits"]
@@ -466,8 +491,8 @@ class ProtBertPPIModel(pl.LightningModule):
 
         with torch.no_grad():
             model_inputA, model_inputB, _ = self.prepare_sample([sample], prepare_target=False)
-            model_out_A = self.forward(**model_inputA)
-            model_out_B = self.forward(**model_inputB)
+            model_out_A = self.forward(**model_inputA).to('cuda')
+            model_out_B = self.forward(**model_inputB).to('cuda')
             classifier_output = self.classifier(model_out_A, model_out_B)
             logits = classifier_output["logits"]
             preds = self.sigmoid(logits)
@@ -574,13 +599,59 @@ class ProtBertPPIModel(pl.LightningModule):
         """ Function that loads the train set. """
         # torch.distributed.init_process_group(backend='gloo')
         self._train_dataset = self.__retrieve_dataset(train=True)
-        return DataLoader(
+        # return DataLoader(
+        #     dataset=self._train_dataset,
+        #     # sampler=BalancedFewShotSiameseSampler(self._train_dataset, self.hparams.per_device_train_batch_size, 8),
+        #     sampler = RandomSampler(self._train_dataset),
+        #     # sampler = RandomSampler(self._train_dataset),
+        #     batch_size=self.hparams.per_device_train_batch_size,
+        #     collate_fn=self.prepare_sample,
+        #     num_workers=0,
+        # )
+        # print("RandomSampler(self._train_dataset)", RandomSampler(self._train_dataset))
+        # print(type(RandomSampler(self._train_dataset)))
+        # sampler=RandomSampler(self._train_dataset)
+        # print("sampler.__iter__()", sampler.__iter__())
+        # print("sampler.__iter__() type", type(sampler.__iter__()))
+        val = DataLoader(
             dataset=self._train_dataset,
-            sampler=RandomSampler(self._train_dataset),
+            # sampler=BalancedFewShotSiameseSampler(self._train_dataset, self.hparams.per_device_train_batch_size, 8),
+            # sampler=RandomSampler(self._train_dataset),
+            sampler=FewShotSiameseSampler(self._train_dataset),
+            # sampler = RandomSampler(self._train_dataset),
             batch_size=self.hparams.per_device_train_batch_size,
             collate_fn=self.prepare_sample,
             num_workers=0,
         )
+        # print("val: ", val)
+        # print(type(val))
+
+        # val = DataLoader(
+        #     dataset=self._train_dataset,
+        #     # sampler=BalancedFewShotSiameseSampler(self._train_dataset, self.hparams.per_device_train_batch_size, 8),
+        #     sampler=FewShotSiameseSampler(self._train_dataset, self.hparams.per_device_train_batch_size),
+        #     # sampler = RandomSampler(self._train_dataset),
+        #     batch_size=self.hparams.per_device_train_batch_size,
+        #     collate_fn=self.prepare_sample,
+        #     num_workers=0,
+        # )
+
+        # print("val2: ", val)
+        # print(type(val2))
+        return val
+        # return DataLoader(
+        #     dataset=self._train_dataset,
+        #     # sampler=BalancedFewShotSiameseSampler(self._train_dataset, self.hparams.per_device_train_batch_size, 8),
+        #     sampler=RandomSampler(self._train_dataset),
+        #     # sampler = RandomSampler(self._train_dataset),
+        #     batch_size=self.hparams.per_device_train_batch_size,
+        #     collate_fn=self.prepare_sample,
+        #     num_workers=0,
+        # )
+    
+
+        # siamese_batch_sampler = FewShotSiameseSampler(self._train_dataset, self.hparams.per_device_train_batch_size)
+        # return torch.utils.data.DataLoader(self._train_dataset, batch_sampler=FewShotSiameseSampler(self._train_dataset, self.hparams.per_device_train_batch_size))
 
     def val_dataloader(self) -> DataLoader:
         """Function that loads the validation set."""
@@ -738,25 +809,25 @@ class ProtBertPPIModel(pl.LightningModule):
         )
         parser2.add_argument(
             "--train_csv",
-            default=settings.BASE_DATA_DIR + "/generated/test_samples_output.csv",
+            default=settings.BASE_DATA_DIR + "\generated\\train_pairs.csv",
             type=str,
             help="Path to the file containing the train data.",
         )
         parser2.add_argument(
             "--valid_csv",
-            default=settings.BASE_DATA_DIR + "/generated/test_samples_output.csv",
+            default=settings.BASE_DATA_DIR + "\generated\\val_pairs.csv",
             type=str,
             help="Path to the file containing the valid data.",
         )
         parser2.add_argument(
             "--test_csv",
-            default=settings.BASE_DATA_DIR + "/generated/test_samples_output.csv",
+            default=settings.BASE_DATA_DIR + "\generated\\test_pairs.csv",
             type=str,
             help="Path to the file containing the test data.",
         )
         parser2.add_argument(
             "--predict_csv",
-            default=settings.BASE_DATA_DIR + "/generated/test_samples_output.csv",
+            default=settings.BASE_DATA_DIR + "\generated\test_samples_output.csv",
             type=str,
             help="Path to the file containing the inferencing data.",
         )

@@ -107,11 +107,15 @@ def generate_parser():
     parser._actions[idx].default = False
     idx = [a.dest for a in parser._actions].index('accelerator')
     parser._actions[idx].default = "cpu"
+
+    idx = [a.dest for a in parser._actions].index('replace_sampler_ddp')
+    parser._actions[idx].default = False
+    
     # from pytorch_lightning.strategies import DDPStrategy
     # ddp = DDPStrategy(process_group_backend="nccl")
     # # strategy=ddp
     idx = [a.dest for a in parser._actions].index('strategy')
-    parser._actions[idx].default = "ddp"
+    parser._actions[idx].default = "dp"
 
     idx = [a.dest for a in parser._actions].index('limit_train_batches')
     parser._actions[idx].default = 1.0
@@ -200,14 +204,17 @@ def main(params: TTNamespace):
     trainer = Trainer.from_argparse_args(params)
 
     # INIT LIGHTNING MODEL
-    model = ProtBertPPIModel(params)
+    model = ProtBertPPIModel(params).to('cuda')
     global_rank = model.global_rank
     
     # EXECUTE TRAINING
     if params.perform_testing_with_checkpoint == False and params.perform_prediction == False:
         if global_rank == 0:
             logger.info("Starting training.")
-    
+
+        for param in model.parameters():
+            param.requires_grad = True
+
         trainer.fit(model)
         trainer.save_checkpoint(settings.BASE_MODELS_DIR + "/vp1_ppi_model.ckpt")
     
@@ -221,7 +228,7 @@ def main(params: TTNamespace):
             logger.info("Starting testing with the specific path checkpoint.")
             logger.info("Loading model with checkpoint: %s", checkpoint_path)
 
-        model = model.load_from_checkpoint(checkpoint_path)
+        model = model.load_from_checkpoint(checkpoint_path).to('cuda')
         model.eval()
 
         model.hparams.test_csv = params.test_csv
@@ -239,7 +246,7 @@ def main(params: TTNamespace):
             logger.info("Starting predicting with the current model.")
             logger.info("Loading model with checkpoint: %s", checkpoint_path)
 
-        model = model.load_from_checkpoint(checkpoint_path)
+        model = model.load_from_checkpoint(checkpoint_path).to('cuda')
         model.eval()
 
         model.hparams.predict_csv = params.predict_csv
