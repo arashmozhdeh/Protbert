@@ -106,7 +106,7 @@ def generate_parser():
     idx = [a.dest for a in parser._actions].index('checkpoint_callback')
     parser._actions[idx].default = False
     idx = [a.dest for a in parser._actions].index('accelerator')
-    parser._actions[idx].default = "cpu"
+    parser._actions[idx].default = "gpu"
 
     idx = [a.dest for a in parser._actions].index('replace_sampler_ddp')
     parser._actions[idx].default = False
@@ -115,7 +115,7 @@ def generate_parser():
     # ddp = DDPStrategy(process_group_backend="nccl")
     # # strategy=ddp
     idx = [a.dest for a in parser._actions].index('strategy')
-    parser._actions[idx].default = "dp"
+    parser._actions[idx].default = "ddp"
 
     idx = [a.dest for a in parser._actions].index('limit_train_batches')
     parser._actions[idx].default = 1.0
