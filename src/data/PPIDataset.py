@@ -411,7 +411,7 @@ class PPIDataset():
     #     return Dataset(collated_dataset)
 
     def load_dataset(self, path):
-        df = self._retrieve_dataframe(path)[:10]
+        df = self._retrieve_dataframe(path)
 
         labels = list(df['Label'])
         seqA = list(df['SeqA'])
