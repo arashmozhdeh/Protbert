@@ -438,9 +438,11 @@ class ProtBertPPIModel(pl.LightningModule):
         print(result)
         # self.log_dict(result, on_epoch=True)
         for idx, (key, value) in enumerate(result.items()):
-            print(key)
-            print(type(value))
-            self.log(f"metric_name_{idx}", value)
+            if isinstance(value, tuple):
+                for sub_idx, tensor in enumerate(value):
+                    self.log(f"{key}_{sub_idx}", tensor)
+            else:
+                self.log(f"{key}", value)
         
         self.current_val_epoch += 1
 
