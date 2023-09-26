@@ -435,9 +435,10 @@ class ProtBertPPIModel(pl.LightningModule):
         result.pop(self.valid_metrics.prefix + 'ROC', None)
         result.pop(self.valid_metrics.prefix + 'PrecisionRecallCurve', None)
         result.pop(self.valid_metrics.prefix + 'ConfusionMatrix', torch.Tensor([[-1,-1],[-1,-1]]))
+        print(result)
         # self.log_dict(result, on_epoch=True)
-        for idx, value in enumerate(result):
-            print(value)
+        for idx, (key, value) in enumerate(result.items()):
+            print(key)
             print(type(value))
             self.log(f"metric_name_{idx}", value)
         
