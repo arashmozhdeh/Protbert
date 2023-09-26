@@ -204,7 +204,7 @@ def main(params: TTNamespace):
     trainer = Trainer.from_argparse_args(params)
 
     # INIT LIGHTNING MODEL
-    model = ProtBertPPIModel(params).to('cuda')
+    model = ProtBertPPIModel(params)
     global_rank = model.global_rank
     
     # EXECUTE TRAINING
@@ -228,7 +228,7 @@ def main(params: TTNamespace):
             logger.info("Starting testing with the specific path checkpoint.")
             logger.info("Loading model with checkpoint: %s", checkpoint_path)
 
-        model = model.load_from_checkpoint(checkpoint_path).to('cuda')
+        model = model.load_from_checkpoint(checkpoint_path)
         model.eval()
 
         model.hparams.test_csv = params.test_csv
@@ -246,7 +246,7 @@ def main(params: TTNamespace):
             logger.info("Starting predicting with the current model.")
             logger.info("Loading model with checkpoint: %s", checkpoint_path)
 
-        model = model.load_from_checkpoint(checkpoint_path).to('cuda')
+        model = model.load_from_checkpoint(checkpoint_path)
         model.eval()
 
         model.hparams.predict_csv = params.predict_csv

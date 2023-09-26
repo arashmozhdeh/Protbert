@@ -343,14 +343,14 @@ class ProtBertPPIModel(pl.LightningModule):
     def __single_step(self, batch):
         # print("batch", batch)
         inputs_A, inputs_B, targets = batch
-        inputs_A = inputs_A.to('cuda')
-        inputs_B = inputs_B.to('cuda')
+        inputs_A = inputs_A
+        inputs_B = inputs_B
         for key in targets:
-            targets[key] = targets[key].to('cuda')
+            targets[key] = targets[key]
         # print("type(inputs_A)", type(inputs_A))
         # print("inputs_A",inputs_A)
-        model_out_A = self.forward(**inputs_A).to('cuda')
-        model_out_B = self.forward(**inputs_B).to('cuda')
+        model_out_A = self.forward(**inputs_A)
+        model_out_B = self.forward(**inputs_B)
         classifier_output = self.classifier(model_out_A, model_out_B)
 
         loss = self.loss_bce_with_integrated_sigmoid(classifier_output, targets)
@@ -476,12 +476,12 @@ class ProtBertPPIModel(pl.LightningModule):
 
     def predict_step(self, batch: tuple, batch_nb: int, *args, **kwargs) -> dict:
         inputs_A, inputs_B, targets = batch
-        inputs_A = inputs_A.to('cuda')
-        inputs_B = inputs_B.to('cuda')
+        inputs_A = inputs_A
+        inputs_B = inputs_B
         for key in targets:
-            targets[key] = targets[key].to('cuda')
-        model_out_A = self.forward(**inputs_A).to('cuda')
-        model_out_B = self.forward(**inputs_B).to('cuda')
+            targets[key] = targets[key]
+        model_out_A = self.forward(**inputs_A)
+        model_out_B = self.forward(**inputs_B)
         classifier_output = self.classifier(model_out_A, model_out_B)
 
         preds = classifier_output["logits"]
@@ -506,8 +506,8 @@ class ProtBertPPIModel(pl.LightningModule):
 
         with torch.no_grad():
             model_inputA, model_inputB, _ = self.prepare_sample([sample], prepare_target=False)
-            model_out_A = self.forward(**model_inputA).to('cuda')
-            model_out_B = self.forward(**model_inputB).to('cuda')
+            model_out_A = self.forward(**model_inputA)
+            model_out_B = self.forward(**model_inputB)
             classifier_output = self.classifier(model_out_A, model_out_B)
             logits = classifier_output["logits"]
             preds = self.sigmoid(logits)
