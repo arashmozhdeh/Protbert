@@ -232,8 +232,8 @@ class ProtBertPPIModel(pl.LightningModule):
             output_vectors.append(max_over_time)
         if pool_mean or pool_mean_sqrt:
             input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+            print(token_embeddings.device, input_mask_expanded.device)
             sum_embeddings = torch.sum(token_embeddings * input_mask_expanded, 1)
-
             #If tokens are weighted (by WordWeights layer), feature 'token_weights_sum' will be present
             if 'token_weights_sum' in features:
                 sum_mask = features['token_weights_sum'].unsqueeze(-1).expand(sum_embeddings.size())
