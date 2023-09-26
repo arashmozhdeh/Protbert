@@ -30,7 +30,11 @@ from torch.utils.data import DataLoader, RandomSampler
 from torchmetrics import (AUROC, F1Score, ROC, Accuracy, AveragePrecision,
                           MatthewsCorrCoef, Precision, PrecisionRecallCurve,
                           Recall, ConfusionMatrix)
-from torchmetrics.classification import BinaryAccuracy, BinaryPrecision, BinaryRecall
+from torchmetrics.classification import BinaryAccuracy, BinaryPrecision, \
+                                        BinaryRecall, BinaryF1Score, \
+                                        BinaryAveragePrecision, BinaryAUROC, \
+                                        BinaryConfusionMatrix, BinaryPrecisionRecallCurve, \
+                                        BinaryROC, BinaryMatthewsCorrCoef
 from torchmetrics.collections import MetricCollection
 from torchnlp.encoders import LabelEncoder
 from torchnlp.utils import collate_tensors
@@ -104,6 +108,10 @@ class ProtBertPPIModel(pl.LightningModule):
             BinaryAccuracy(), 
             BinaryPrecision(), 
             BinaryRecall(),
+            BinaryF1Score(),
+            BinaryAveragePrecision(),
+            BinaryAUROC(),
+            BinaryMatthewsCorrCoef(),
             # Accuracy(task="multiclass", num_classes=2), 
             # Precision(task="multiclass", num_classes=2), 
             # Recall(task="multiclass", num_classes=2), 
@@ -117,6 +125,13 @@ class ProtBertPPIModel(pl.LightningModule):
             BinaryAccuracy(), 
             BinaryPrecision(), 
             BinaryRecall(),
+            BinaryF1Score(),
+            BinaryAveragePrecision(),
+            BinaryConfusionMatrix(),
+            BinaryPrecisionRecallCurve(),
+            BinaryAUROC(),
+            BinaryROC(),
+            BinaryMatthewsCorrCoef(),
             # Accuracy(task="multiclass", num_classes=2), 
             # Precision(task="multiclass", num_classes=2), 
             # Recall(task="multiclass", num_classes=2), 
