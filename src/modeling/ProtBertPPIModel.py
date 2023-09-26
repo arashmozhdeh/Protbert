@@ -343,14 +343,14 @@ class ProtBertPPIModel(pl.LightningModule):
     def __single_step(self, batch):
         # print("batch", batch)
         inputs_A, inputs_B, targets = batch
-        inputs_A = inputs_A
-        inputs_B = inputs_B
+        inputs_A = inputs_A.to(self.device)
+        inputs_B = inputs_B.to(self.device)
         for key in targets:
-            targets[key] = targets[key]
+            targets[key] = targets[key].to(self.device)
         # print("type(inputs_A)", type(inputs_A))
         # print("inputs_A",inputs_A)
-        model_out_A = self.forward(**inputs_A)
-        model_out_B = self.forward(**inputs_B)
+        model_out_A = self.forward(**inputs_A).to(self.device)
+        model_out_B = self.forward(**inputs_B).to(self.device)
         classifier_output = self.classifier(model_out_A, model_out_B)
 
         loss = self.loss_bce_with_integrated_sigmoid(classifier_output, targets)
@@ -478,12 +478,12 @@ class ProtBertPPIModel(pl.LightningModule):
 
     def predict_step(self, batch: tuple, batch_nb: int, *args, **kwargs) -> dict:
         inputs_A, inputs_B, targets = batch
-        inputs_A = inputs_A
-        inputs_B = inputs_B
+        inputs_A = inputs_A.to(self.device)
+        inputs_B = inputs_B.to(self.device)
         for key in targets:
-            targets[key] = targets[key]
-        model_out_A = self.forward(**inputs_A)
-        model_out_B = self.forward(**inputs_B)
+            targets[key] = targets[key].to(self.device)
+        model_out_A = self.forward(**inputs_A).to(self.device)
+        model_out_B = self.forward(**inputs_B).to(self.device)
         classifier_output = self.classifier(model_out_A, model_out_B)
 
         preds = classifier_output["logits"]

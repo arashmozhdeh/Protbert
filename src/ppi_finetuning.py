@@ -115,7 +115,7 @@ def generate_parser():
     # ddp = DDPStrategy(process_group_backend="nccl")
     # # strategy=ddp
     idx = [a.dest for a in parser._actions].index('strategy')
-    parser._actions[idx].default = "ddp"
+    parser._actions[idx].default = "dp"
 
     idx = [a.dest for a in parser._actions].index('limit_train_batches')
     parser._actions[idx].default = 1.0
