@@ -354,7 +354,7 @@ class PPIDataset():
             # "ncbi_gene_A_id", "ncbi_gene_B_id"
         ] 
         # df: DataFrame = pd.read_csv(path, sep = "\n", names=column_names, header=0) #type:ignore
-        df: DataFrame = pd.read_csv(path, names=column_names, header=0)[:1000] #type:ignore
+        df: DataFrame = pd.read_csv(path, names=column_names, header=0) #type:ignore
 
         return df
 
