@@ -122,7 +122,7 @@ class ProtBertPPIModel(pl.LightningModule):
         ], prefix='train_')
 
         self.valid_metrics = MetricCollection([
-            BinaryAccuracy(), 
+            BinaryAccuracy(),
             BinaryPrecision(), 
             BinaryRecall(),
             BinaryF1Score(),
