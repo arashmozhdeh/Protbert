@@ -606,7 +606,7 @@ class ProtBertPPIModel(pl.LightningModule):
     def __retrieve_dataset(self, train=False, val=False, test=False, predict=False) -> Dataset:
         """ Retrieves task specific dataset """
         if train:
-            return self.dataset.load_dataset(self.hparams.train_csv)[:40]
+            return self.dataset.load_dataset(self.hparams.train_csv)
         elif val:
             return self.dataset.load_dataset(self.hparams.valid_csv)
         elif test:
