@@ -10,11 +10,11 @@ GIT_REPO_NAME="STEP-main"
 LOGGING_LEVEL = logging.INFO
 EXTERNAL_LOGGING_LEVEL = logging.ERROR
 
-home_base_dir = "D:\\STEP-main\\" + GIT_REPO_NAME
-BASE_DATA_DIR = home_base_dir + "\data"
-TEST_TUBE_LOG_PATH = home_base_dir + "\test_tube\logs"
-BASE_MODELS_DIR = home_base_dir + "\models"
-BASE_PRETRAINED_MODEL_DIR = BASE_MODELS_DIR + "\pre-trained-models"
+home_base_dir = "/home/arash.mozhdehi/GPU_STEP/" + GIT_REPO_NAME
+BASE_DATA_DIR = home_base_dir + "/data"
+TEST_TUBE_LOG_PATH = home_base_dir + "/test_tube/logs"
+BASE_MODELS_DIR = home_base_dir + "/models"
+BASE_PRETRAINED_MODEL_DIR = BASE_MODELS_DIR + "/pre-trained-models"
 
 # MLFLOW_SERVER_PORT="6000"
 # MLFLOW_SERVER_HOST = "localhost"
