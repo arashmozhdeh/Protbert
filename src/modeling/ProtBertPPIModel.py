@@ -437,6 +437,8 @@ class ProtBertPPIModel(pl.LightningModule):
         result.pop(self.valid_metrics.prefix + 'ConfusionMatrix', torch.Tensor([[-1,-1],[-1,-1]]))
         # self.log_dict(result, on_epoch=True)
         for idx, value in enumerate(result):
+            print(value)
+            print(type(value))
             self.log(f"metric_name_{idx}", value)
         
         self.current_val_epoch += 1
@@ -604,7 +606,7 @@ class ProtBertPPIModel(pl.LightningModule):
     def __retrieve_dataset(self, train=False, val=False, test=False, predict=False) -> Dataset:
         """ Retrieves task specific dataset """
         if train:
-            return self.dataset.load_dataset(self.hparams.train_csv)
+            return self.dataset.load_dataset(self.hparams.train_csv)[:10]
         elif val:
             return self.dataset.load_dataset(self.hparams.valid_csv)
         elif test:
