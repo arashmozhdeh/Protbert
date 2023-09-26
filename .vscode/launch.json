@@ -14,14 +14,14 @@
             "args": [
                 // "--help"
                 "--accelerator", "gpu",
-                "--devices", "1", 
+                "--devices", "2", 
                 // "--devices", "2", // for 2 gpus
                 "--num_sanity_val_steps", "0",
                 // "--limit_train_batches", "2",
                 // "--limit_val_batches", "2",
             ],
             "env": {
-                "CUDA_VISIBLE_DEVICES": "0"
+                "CUDA_VISIBLE_DEVICES": "0,1"
                 // "CUDA_VISIBLE_DEVICES": "0,1" // for 2 gpus
             }
         }

@@ -163,7 +163,7 @@ class ProtBertPPIModel(pl.LightningModule):
         
         config = BertConfig.from_pretrained(self.model_name)
         config.gradient_checkpointing = True
-        self.ProtBertBFD = BertModel.from_pretrained(self.model_name, config=config)
+        self.ProtBertBFD = BertModel.from_pretrained(self.model_name, config=config).to(self.device)
         self.encoder_features = 1024
 
         # Tokenizer
@@ -264,7 +264,7 @@ class ProtBertPPIModel(pl.LightningModule):
         Returns:
             [List]: List of pooled vectors
         """
-        word_embeddings = self.ProtBertBFD(input_ids, attention_mask)[0]
+        word_embeddings = self.ProtBertBFD(input_ids.to(self.device), attention_mask.to(self.device))[0]
 
         pooling = self.pool_strategy({
             "token_embeddings": word_embeddings,
@@ -433,7 +433,9 @@ class ProtBertPPIModel(pl.LightningModule):
         result.pop(self.valid_metrics.prefix + 'ROC', None)
         result.pop(self.valid_metrics.prefix + 'PrecisionRecallCurve', None)
         result.pop(self.valid_metrics.prefix + 'ConfusionMatrix', torch.Tensor([[-1,-1],[-1,-1]]))
-        self.log_dict(result, on_epoch=True)
+        # self.log_dict(result, on_epoch=True)
+        for idx, value in enumerate(result):
+            self.log(f"metric_name_{idx}", value)
         
         self.current_val_epoch += 1
 
@@ -530,7 +532,7 @@ class ProtBertPPIModel(pl.LightningModule):
         batches = len(self.train_dataloader())
         batches = min(batches, limit_batches) if isinstance(limit_batches, int) else int(limit_batches * batches)
 
-        num_devices = 1
+        num_devices = 2
         if self.trainer.tpu_cores:
             num_devices = max(num_devices, self.trainer.tpu_cores)
 
