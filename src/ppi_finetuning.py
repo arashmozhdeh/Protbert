@@ -50,7 +50,7 @@ def generate_parser():
         "--deactivate_earlystopping", default=False, type=bool, help="Deactivate early stopping."
     )
     parser2.add_argument(
-        "--monitor", default="val_AUROC", type=str, help="Quantity to monitor."
+        "--monitor", default="val_BinaryAUROC", type=str, help="Quantity to monitor."
     )
     parser2.add_argument(
         "--metric_mode",
