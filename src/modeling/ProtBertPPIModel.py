@@ -838,25 +838,25 @@ class ProtBertPPIModel(pl.LightningModule):
         )
         parser2.add_argument(
             "--train_csv",
-            default=settings.BASE_DATA_DIR + "/generated/train_pairs.csv",
+            default=settings.BASE_DATA_DIR + "generated/NewData/train_pairs_5shots.csv",
             type=str,
             help="Path to the file containing the train data.",
         )
         parser2.add_argument(
             "--valid_csv",
-            default=settings.BASE_DATA_DIR + "/generated/val_pairs.csv",
+            default=settings.BASE_DATA_DIR + "generated/NewData/val_pairs_5shots.csv",
             type=str,
             help="Path to the file containing the valid data.",
         )
         parser2.add_argument(
             "--test_csv",
-            default=settings.BASE_DATA_DIR + "/generated/test_pairs.csv",
+            default=settings.BASE_DATA_DIR + "generated/NewData/test_pairs_5shots.csv",
             type=str,
             help="Path to the file containing the test data.",
         )
         parser2.add_argument(
             "--predict_csv",
-            default=settings.BASE_DATA_DIR + "/generated/test_samples_output.csv",
+            default=settings.BASE_DATA_DIR + "generated/NewData/test_pairs_5shots.csv",
             type=str,
             help="Path to the file containing the inferencing data.",
         )
