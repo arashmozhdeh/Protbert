@@ -349,9 +349,9 @@ class ProtBertPPIModel(pl.LightningModule):
         inputs_B = inputs_B.to(self.device)
         # print(inputs_A.shape)
         # print(inputs_B.shape)
-        print("inputs_A", inputs_A)
-        print("inputs_B", inputs_B)
-        print("targets", targets)
+        # print("inputs_A", inputs_A)
+        # print("inputs_B", inputs_B)
+        # print("targets", targets)
         for key in targets:
             targets[key] = targets[key].to(self.device)
         # print("type(inputs_A)", type(inputs_A))
