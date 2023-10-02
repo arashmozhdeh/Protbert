@@ -392,7 +392,7 @@ class ProtBertPPIModel(pl.LightningModule):
             except:
                 pass
 
-
+        self.local_logger.info("\n")
         output = OrderedDict({
             'loss': train_loss,
         })
@@ -410,7 +410,7 @@ class ProtBertPPIModel(pl.LightningModule):
         self.log_dict(result, on_epoch=True)
 
         if self.global_rank == 0:
-            self.local_logger.info("Training epoch %s finished", self.current_epoch)
+            self.local_logger.info("Training epoch %s finished\n", self.current_epoch)
             if isinstance(self.logger.experiment, MlflowClient):
                 self.local_logger.info("Check out run: %s", settings.MLFLOW_TRACKING_URI + "/#/experiments/" + self.logger.experiment_id + "/runs/" + self.logger.run_id)
 
