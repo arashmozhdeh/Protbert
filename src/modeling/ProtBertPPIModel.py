@@ -425,7 +425,7 @@ class ProtBertPPIModel(pl.LightningModule):
         """
         val_loss, trues, preds = self.__single_step(batch)
         self.valid_metrics.update(preds, trues)
-        metrics = self.valid_metrics.compute()  # compute the metrics after updating
+        # metrics = self.valid_metrics.compute()  # compute the metrics after updating
     
         for name, value in metrics.items():
             try:
