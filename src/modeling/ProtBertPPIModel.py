@@ -385,12 +385,17 @@ class ProtBertPPIModel(pl.LightningModule):
         self.log('train_loss', train_loss, on_step=False, on_epoch=True)
 
         metrics = self.train_metrics.compute()  # compute the metrics after updating
-    
+
+        words = ["BinaryAccuracy", "BinaryPrecision", "BinaryRecall", "BinaryF1Score", "BinaryAveragePrecision"]
+
         for name, value in metrics.items():
-            try:
-                self.log(name, value, on_step=True, on_epoch=True, prog_bar=True)
-            except Exception as e:
-                self.logger.warning(f"Failed to log metric '{name}': {e}")
+            found_words = list(filter(lambda word: word in name, words))
+            if found_words:
+                try:
+                    self.log(name, value, on_step=True, on_epoch=True, prog_bar=True)
+                except Exception as e:
+                    pass
+                    # self.logger.warning(f"Failed to log metric '{name}': {e}")
         # self.log('', '\n', on_step=True, on_epoch=True, prog_bar=True)
         # self.local_logger.info("\n")
         output = OrderedDict({
@@ -429,12 +434,16 @@ class ProtBertPPIModel(pl.LightningModule):
     
         metrics = self.valid_metrics.compute()
 
+        words = ["BinaryAccuracy", "BinaryPrecision", "BinaryRecall", "BinaryF1Score", "BinaryAveragePrecision"]
+
         for name, value in metrics.items():
-            try:
-                self.log(name, value, on_step=True, on_epoch=True, prog_bar=True)
-            except Exception as e:
-                self.logger.warning(f"Failed to log metric '{name}': {e}")
-                
+            found_words = list(filter(lambda word: word in name, words))
+            if found_words:
+                try:
+                    self.log(name, value, on_step=True, on_epoch=True, prog_bar=True)
+                except Exception as e:
+                    pass
+
         output = OrderedDict({
             'val_loss': val_loss,
         })
