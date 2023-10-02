@@ -383,6 +383,13 @@ class ProtBertPPIModel(pl.LightningModule):
         self.train_metrics.update(preds, trues)
 
         self.log('train_loss', train_loss, on_step=False, on_epoch=True)
+
+        metrics = self.train_metrics.compute()  # compute the metrics after updating
+    
+        for name, value in metrics.items():
+            self.log(name, value, on_step=True, on_epoch=True, prog_bar=True)  # or adjust as needed
+
+
         output = OrderedDict({
             'loss': train_loss,
         })
@@ -414,8 +421,11 @@ class ProtBertPPIModel(pl.LightningModule):
             - dictionary passed to the validation_end function.
         """
         val_loss, trues, preds = self.__single_step(batch)
-
         self.valid_metrics.update(preds, trues)
+        metrics = self.valid_metrics.compute()  # compute the metrics after updating
+    
+        for name, value in metrics.items():
+            self.log(name, value, on_step=True, on_epoch=True, prog_bar=True)  # or adjust as needed
         output = OrderedDict({
             'val_loss': val_loss,
         })
