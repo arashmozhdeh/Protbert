@@ -387,7 +387,10 @@ class ProtBertPPIModel(pl.LightningModule):
         metrics = self.train_metrics.compute()  # compute the metrics after updating
     
         for name, value in metrics.items():
-            self.log(name, value, on_step=True, on_epoch=True, prog_bar=True)  # or adjust as needed
+            try:
+                self.log(name, value, on_step=True, on_epoch=True, prog_bar=True)  # or adjust as needed
+            except:
+                pass
 
 
         output = OrderedDict({
@@ -425,7 +428,10 @@ class ProtBertPPIModel(pl.LightningModule):
         metrics = self.valid_metrics.compute()  # compute the metrics after updating
     
         for name, value in metrics.items():
-            self.log(name, value, on_step=True, on_epoch=True, prog_bar=True)  # or adjust as needed
+            try:
+                self.log(name, value, on_step=True, on_epoch=True, prog_bar=True)  # or adjust as needed
+            except:
+                pass
         output = OrderedDict({
             'val_loss': val_loss,
         })
