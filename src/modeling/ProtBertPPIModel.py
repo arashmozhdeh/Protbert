@@ -388,9 +388,9 @@ class ProtBertPPIModel(pl.LightningModule):
     
         for name, value in metrics.items():
             try:
-                self.log(name, value, on_step=True, on_epoch=True, prog_bar=True)  # or adjust as needed
-            except:
-                pass
+                self.log(name, value, on_step=True, on_epoch=True, prog_bar=True)
+            except Exception as e:
+                self.logger.warning(f"Failed to log metric '{name}': {e}")
         # self.log('', '\n', on_step=True, on_epoch=True, prog_bar=True)
         # self.local_logger.info("\n")
         output = OrderedDict({
@@ -427,11 +427,14 @@ class ProtBertPPIModel(pl.LightningModule):
         self.valid_metrics.update(preds, trues)
         # metrics = self.valid_metrics.compute()  # compute the metrics after updating
     
+        metrics = self.valid_metrics.compute()
+
         for name, value in metrics.items():
             try:
-                self.log(name, value, on_step=True, on_epoch=True, prog_bar=True)  # or adjust as needed
-            except:
-                pass
+                self.log(name, value, on_step=True, on_epoch=True, prog_bar=True)
+            except Exception as e:
+                self.logger.warning(f"Failed to log metric '{name}': {e}")
+                
         output = OrderedDict({
             'val_loss': val_loss,
         })
