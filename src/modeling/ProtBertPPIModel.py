@@ -388,10 +388,10 @@ class ProtBertPPIModel(pl.LightningModule):
     
         for name, value in metrics.items():
             try:
-                self.log(name, value, on_step=True, on_epoch=True, prog_bar=True)  # or adjust as needed
+                self.log(name, value + "\n", on_step=True, on_epoch=True, prog_bar=True)  # or adjust as needed
             except:
                 pass
-        self.log('', '\n', on_step=True, on_epoch=True, prog_bar=True)
+        # self.log('', '\n', on_step=True, on_epoch=True, prog_bar=True)
         # self.local_logger.info("\n")
         output = OrderedDict({
             'loss': train_loss,
