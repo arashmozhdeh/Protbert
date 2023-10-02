@@ -211,7 +211,7 @@ def main(params: TTNamespace):
     if params.perform_testing_with_checkpoint == False and params.perform_prediction == False:
         if global_rank == 0:
             logger.info("Starting training.")
-
+        logger.info("Trained with" + params.train_csv + "\n")
         for param in model.parameters():
             param.requires_grad = True
 
