@@ -75,6 +75,9 @@ def generate_parser():
         "--checkpoint_filename", default="vp1_ppi_model.ckpt", type=str, help="Checkpoint path."
     )
     parser2.add_argument(
+        "--perform_testing_with_checkpoint", default=False, type=bool, help="Perform testing with a specific checkpoint. Will deactivate Training procedure completely."
+    )
+    parser2.add_argument(
         "--testing_checkpoint", default=None, type=str, help="File path of checkpoint to be used for testing."
     )
     # parser2.add_argument(
