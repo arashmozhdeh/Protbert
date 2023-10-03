@@ -11,7 +11,13 @@ import plotly.express as px
 import pytorch_lightning as pl
 import torch
 from torch.functional import Tensor
+import torch
+from torch.utils.data.sampler import Sampler
+import random
 import torch.nn as nn
+import torch
+from torch.utils.data.sampler import Sampler
+import random
 
 from mlflow.tracking import MlflowClient
 from pytorch_lightning.utilities.model_summary import ModelSummary
@@ -19,10 +25,16 @@ from pytorch_lightning.utilities.enums import ModelSummaryMode
 from test_tube.argparse_hopt import TTNamespace
 from torch import optim
 from torch.optim.lr_scheduler import LambdaLR
+# from PPIDataset import BalancedFewShotSiameseSampler
 from torch.utils.data import DataLoader, RandomSampler
 from torchmetrics import (AUROC, F1Score, ROC, Accuracy, AveragePrecision,
                           MatthewsCorrCoef, Precision, PrecisionRecallCurve,
                           Recall, ConfusionMatrix)
+from torchmetrics.classification import BinaryAccuracy, BinaryPrecision, \
+                                        BinaryRecall, BinaryF1Score, \
+                                        BinaryAveragePrecision, BinaryAUROC, \
+                                        BinaryConfusionMatrix, BinaryPrecisionRecallCurve, \
+                                        BinaryROC, BinaryMatthewsCorrCoef
 from torchmetrics.collections import MetricCollection
 from torchnlp.encoders import LabelEncoder
 from torchnlp.utils import collate_tensors
@@ -31,7 +43,7 @@ from transformers.tokenization_utils_base import BatchEncoding
 from transformers.file_utils import TensorType
 
 import settings
-from data.PPIDataset import PPIDataset, Dataset
+from data.PPIDataset import PPIDataset, Dataset, FewShotSiameseSampler
 from utils.ProtBertPPIArgParser import ProtBertPPIArgParser
 
 class ProtBertPPIModel(pl.LightningModule):
@@ -93,26 +105,43 @@ class ProtBertPPIModel(pl.LightningModule):
         # self.dataset.calculate_stat(self.hparams.train_csv)
 
         self.train_metrics = MetricCollection([
-            Accuracy(task="multiclass", num_classes=2), 
-            # Precision(), 
-            # Recall(), 
-            # F1Score(),
-            # AveragePrecision(pos_label=1),
-            # AUROC(pos_label=1),
-            # MatthewsCorrCoef(num_classes=2),
+            BinaryAccuracy(), 
+            BinaryPrecision(), 
+            BinaryRecall(),
+            BinaryF1Score(),
+            BinaryAveragePrecision(),
+            BinaryAUROC(),
+            BinaryMatthewsCorrCoef(),
+            # Accuracy(task="multiclass", num_classes=2), 
+            # Precision(task="multiclass", num_classes=2), 
+            # Recall(task="multiclass", num_classes=2), 
+            # F1Score(task="multiclass", num_classes=2),
+            # AveragePrecision(task="multiclass", num_classes=2),
+            # AUROC(task="multiclass", num_classes=2),
+            # MatthewsCorrCoef(task="multiclass", num_classes=2),
         ], prefix='train_')
 
         self.valid_metrics = MetricCollection([
-            Accuracy(task="multiclass", num_classes=2), 
-            # Precision(), 
-            # Recall(), 
-            # F1Score(),
-            # AveragePrecision(pos_label=1),
-            # ConfusionMatrix(num_classes=2,),
-            # PrecisionRecallCurve(pos_label=1),
-            # AUROC(pos_label=1,average=None),
-            # ROC(pos_label=1),
-            # MatthewsCorrCoef(num_classes=2),
+            BinaryAccuracy(),
+            BinaryPrecision(), 
+            BinaryRecall(),
+            BinaryF1Score(),
+            BinaryAveragePrecision(),
+            BinaryConfusionMatrix(),
+            BinaryPrecisionRecallCurve(),
+            BinaryAUROC(),
+            BinaryROC(),
+            BinaryMatthewsCorrCoef(),
+            # Accuracy(task="multiclass", num_classes=2), 
+            # Precision(task="multiclass", num_classes=2), 
+            # Recall(task="multiclass", num_classes=2), 
+            # F1Score(task="multiclass", num_classes=2),
+            # AveragePrecision(task="multiclass", num_classes=2),
+            # ConfusionMatrix(task="multiclass", num_classes=2),
+            # PrecisionRecallCurve(task="multiclass", num_classes=2),
+            # AUROC(task="multiclass", num_classes=2, average=None),
+            # ROC(task="multiclass", num_classes=2),
+            # MatthewsCorrCoef(task="multiclass", num_classes=2),
         ], prefix='val_')
 
         self.test_metrics = self.valid_metrics.clone(prefix="test_")
@@ -134,7 +163,7 @@ class ProtBertPPIModel(pl.LightningModule):
         
         config = BertConfig.from_pretrained(self.model_name)
         config.gradient_checkpointing = True
-        self.ProtBertBFD = BertModel.from_pretrained(self.model_name, config=config)
+        self.ProtBertBFD = BertModel.from_pretrained(self.model_name, config=config).to(self.device)
         self.encoder_features = 1024
 
         # Tokenizer
@@ -203,8 +232,10 @@ class ProtBertPPIModel(pl.LightningModule):
             output_vectors.append(max_over_time)
         if pool_mean or pool_mean_sqrt:
             input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+            # print(token_embeddings.device, input_mask_expanded.device)
+            token_embeddings = token_embeddings.to(self.device)
+            input_mask_expanded = input_mask_expanded.to(self.device)
             sum_embeddings = torch.sum(token_embeddings * input_mask_expanded, 1)
-
             #If tokens are weighted (by WordWeights layer), feature 'token_weights_sum' will be present
             if 'token_weights_sum' in features:
                 sum_mask = features['token_weights_sum'].unsqueeze(-1).expand(sum_embeddings.size())
@@ -235,7 +266,7 @@ class ProtBertPPIModel(pl.LightningModule):
         Returns:
             [List]: List of pooled vectors
         """
-        word_embeddings = self.ProtBertBFD(input_ids, attention_mask)[0]
+        word_embeddings = self.ProtBertBFD(input_ids.to(self.device), attention_mask.to(self.device))[0]
 
         pooling = self.pool_strategy({
             "token_embeddings": word_embeddings,
@@ -312,9 +343,21 @@ class ProtBertPPIModel(pl.LightningModule):
             self.local_logger.info("Training started, check out run: %s", settings.MLFLOW_TRACKING_URI + "/#/experiments/" + self.logger.experiment_id + "/runs/" + self.logger.run_id)
 
     def __single_step(self, batch):
+        # print("batch", batch)
         inputs_A, inputs_B, targets = batch
-        model_out_A = self.forward(**inputs_A)
-        model_out_B = self.forward(**inputs_B)
+        inputs_A = inputs_A.to(self.device)
+        inputs_B = inputs_B.to(self.device)
+        # print(inputs_A.shape)
+        # print(inputs_B.shape)
+        # print("inputs_A", inputs_A)
+        # print("inputs_B", inputs_B)
+        # print("targets", targets)
+        for key in targets:
+            targets[key] = targets[key].to(self.device)
+        # print("type(inputs_A)", type(inputs_A))
+        # print("inputs_A",inputs_A)
+        model_out_A = self.forward(**inputs_A).to(self.device)
+        model_out_B = self.forward(**inputs_B).to(self.device)
         classifier_output = self.classifier(model_out_A, model_out_B)
 
         loss = self.loss_bce_with_integrated_sigmoid(classifier_output, targets)
@@ -340,6 +383,21 @@ class ProtBertPPIModel(pl.LightningModule):
         self.train_metrics.update(preds, trues)
 
         self.log('train_loss', train_loss, on_step=False, on_epoch=True)
+
+        metrics = self.train_metrics.compute()  # compute the metrics after updating
+
+        words = ["BinaryAccuracy", "BinaryPrecision", "BinaryRecall", "BinaryF1Score", "BinaryAveragePrecision"]
+
+        for name, value in metrics.items():
+            found_words = list(filter(lambda word: word in name, words))
+            if found_words:
+                try:
+                    self.log(name, value, on_step=True, on_epoch=True, prog_bar=True)
+                except Exception as e:
+                    pass
+                    # self.logger.warning(f"Failed to log metric '{name}': {e}")
+        # self.log('', '\n', on_step=True, on_epoch=True, prog_bar=True)
+        # self.local_logger.info("\n")
         output = OrderedDict({
             'loss': train_loss,
         })
@@ -357,7 +415,7 @@ class ProtBertPPIModel(pl.LightningModule):
         self.log_dict(result, on_epoch=True)
 
         if self.global_rank == 0:
-            self.local_logger.info("Training epoch %s finished", self.current_epoch)
+            self.local_logger.info("Training epoch %s finished\n", self.current_epoch)
             if isinstance(self.logger.experiment, MlflowClient):
                 self.local_logger.info("Check out run: %s", settings.MLFLOW_TRACKING_URI + "/#/experiments/" + self.logger.experiment_id + "/runs/" + self.logger.run_id)
 
@@ -371,8 +429,21 @@ class ProtBertPPIModel(pl.LightningModule):
             - dictionary passed to the validation_end function.
         """
         val_loss, trues, preds = self.__single_step(batch)
-
         self.valid_metrics.update(preds, trues)
+        # metrics = self.valid_metrics.compute()  # compute the metrics after updating
+    
+        metrics = self.valid_metrics.compute()
+
+        words = ["BinaryAccuracy", "BinaryPrecision", "BinaryRecall", "BinaryF1Score", "BinaryAveragePrecision"]
+
+        for name, value in metrics.items():
+            found_words = list(filter(lambda word: word in name, words))
+            if found_words:
+                try:
+                    self.log(name, value, on_step=True, on_epoch=True, prog_bar=True)
+                except Exception as e:
+                    pass
+
         output = OrderedDict({
             'val_loss': val_loss,
         })
@@ -397,7 +468,14 @@ class ProtBertPPIModel(pl.LightningModule):
         result.pop(self.valid_metrics.prefix + 'ROC', None)
         result.pop(self.valid_metrics.prefix + 'PrecisionRecallCurve', None)
         result.pop(self.valid_metrics.prefix + 'ConfusionMatrix', torch.Tensor([[-1,-1],[-1,-1]]))
-        self.log_dict(result, on_epoch=True)
+        # print(result)
+        # self.log_dict(result, on_epoch=True)
+        for idx, (key, value) in enumerate(result.items()):
+            if isinstance(value, tuple):
+                for sub_idx, tensor in enumerate(value):
+                    self.log(f"{key}_{sub_idx}", tensor)
+            else:
+                self.log(f"{key}", value)
         
         self.current_val_epoch += 1
 
@@ -439,9 +517,13 @@ class ProtBertPPIModel(pl.LightningModule):
         self.current_test_epoch += 1
 
     def predict_step(self, batch: tuple, batch_nb: int, *args, **kwargs) -> dict:
-        inputs_A, inputs_B, collated_samples = batch
-        model_out_A = self.forward(**inputs_A)
-        model_out_B = self.forward(**inputs_B)
+        inputs_A, inputs_B, targets = batch
+        inputs_A = inputs_A.to(self.device)
+        inputs_B = inputs_B.to(self.device)
+        for key in targets:
+            targets[key] = targets[key].to(self.device)
+        model_out_A = self.forward(**inputs_A).to(self.device)
+        model_out_B = self.forward(**inputs_B).to(self.device)
         classifier_output = self.classifier(model_out_A, model_out_B)
 
         preds = classifier_output["logits"]
@@ -490,7 +572,7 @@ class ProtBertPPIModel(pl.LightningModule):
         batches = len(self.train_dataloader())
         batches = min(batches, limit_batches) if isinstance(limit_batches, int) else int(limit_batches * batches)
 
-        num_devices = 1
+        num_devices = 2
         if self.trainer.tpu_cores:
             num_devices = max(num_devices, self.trainer.tpu_cores)
 
@@ -574,13 +656,59 @@ class ProtBertPPIModel(pl.LightningModule):
         """ Function that loads the train set. """
         # torch.distributed.init_process_group(backend='gloo')
         self._train_dataset = self.__retrieve_dataset(train=True)
-        return DataLoader(
+        # return DataLoader(
+        #     dataset=self._train_dataset,
+        #     # sampler=BalancedFewShotSiameseSampler(self._train_dataset, self.hparams.per_device_train_batch_size, 8),
+        #     sampler = RandomSampler(self._train_dataset),
+        #     # sampler = RandomSampler(self._train_dataset),
+        #     batch_size=self.hparams.per_device_train_batch_size,
+        #     collate_fn=self.prepare_sample,
+        #     num_workers=0,
+        # )
+        # print("RandomSampler(self._train_dataset)", RandomSampler(self._train_dataset))
+        # print(type(RandomSampler(self._train_dataset)))
+        # sampler=RandomSampler(self._train_dataset)
+        # print("sampler.__iter__()", sampler.__iter__())
+        # print("sampler.__iter__() type", type(sampler.__iter__()))
+        val = DataLoader(
             dataset=self._train_dataset,
-            sampler=RandomSampler(self._train_dataset),
+            # sampler=BalancedFewShotSiameseSampler(self._train_dataset, self.hparams.per_device_train_batch_size, 8),
+            # sampler=RandomSampler(self._train_dataset),
+            sampler=FewShotSiameseSampler(self._train_dataset),
+            # sampler = RandomSampler(self._train_dataset),
             batch_size=self.hparams.per_device_train_batch_size,
             collate_fn=self.prepare_sample,
             num_workers=0,
         )
+        # print("val: ", val)
+        # print(type(val))
+
+        # val = DataLoader(
+        #     dataset=self._train_dataset,
+        #     # sampler=BalancedFewShotSiameseSampler(self._train_dataset, self.hparams.per_device_train_batch_size, 8),
+        #     sampler=FewShotSiameseSampler(self._train_dataset, self.hparams.per_device_train_batch_size),
+        #     # sampler = RandomSampler(self._train_dataset),
+        #     batch_size=self.hparams.per_device_train_batch_size,
+        #     collate_fn=self.prepare_sample,
+        #     num_workers=0,
+        # )
+
+        # print("val2: ", val)
+        # print(type(val2))
+        return val
+        # return DataLoader(
+        #     dataset=self._train_dataset,
+        #     # sampler=BalancedFewShotSiameseSampler(self._train_dataset, self.hparams.per_device_train_batch_size, 8),
+        #     sampler=RandomSampler(self._train_dataset),
+        #     # sampler = RandomSampler(self._train_dataset),
+        #     batch_size=self.hparams.per_device_train_batch_size,
+        #     collate_fn=self.prepare_sample,
+        #     num_workers=0,
+        # )
+    
+
+        # siamese_batch_sampler = FewShotSiameseSampler(self._train_dataset, self.hparams.per_device_train_batch_size)
+        # return torch.utils.data.DataLoader(self._train_dataset, batch_sampler=FewShotSiameseSampler(self._train_dataset, self.hparams.per_device_train_batch_size))
 
     def val_dataloader(self) -> DataLoader:
         """Function that loads the validation set."""
@@ -738,25 +866,25 @@ class ProtBertPPIModel(pl.LightningModule):
         )
         parser2.add_argument(
             "--train_csv",
-            default=settings.BASE_DATA_DIR + "/generated/test_samples_output.csv",
+            default=settings.BASE_DATA_DIR + "generated/NewData/train_pairs_5shots.csv",
             type=str,
             help="Path to the file containing the train data.",
         )
         parser2.add_argument(
             "--valid_csv",
-            default=settings.BASE_DATA_DIR + "/generated/test_samples_output.csv",
+            default=settings.BASE_DATA_DIR + "generated/NewData/val_pairs_5shots.csv",
             type=str,
             help="Path to the file containing the valid data.",
         )
         parser2.add_argument(
             "--test_csv",
-            default=settings.BASE_DATA_DIR + "/generated/test_samples_output.csv",
+            default=settings.BASE_DATA_DIR + "generated/NewData/test_pairs_5shots.csv",
             type=str,
             help="Path to the file containing the test data.",
         )
         parser2.add_argument(
             "--predict_csv",
-            default=settings.BASE_DATA_DIR + "/generated/test_samples_output.csv",
+            default=settings.BASE_DATA_DIR + "generated/NewData/test_pairs_5shots.csv",
             type=str,
             help="Path to the file containing the inferencing data.",
         )
