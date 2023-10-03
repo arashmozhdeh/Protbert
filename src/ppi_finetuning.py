@@ -50,7 +50,7 @@ def generate_parser():
         "--deactivate_earlystopping", default=False, type=bool, help="Deactivate early stopping."
     )
     parser2.add_argument(
-        "--monitor", default="val_AUROC", type=str, help="Quantity to monitor."
+        "--monitor", default="val_BinaryAUROC", type=str, help="Quantity to monitor."
     )
     parser2.add_argument(
         "--metric_mode",
@@ -71,6 +71,9 @@ def generate_parser():
 
     # Options for testing with specific checkpoint 
     parser2 = parser.add_argument_group(title= "Options for testing with specific checkpoint.")
+    parser2.add_argument(
+        "--checkpoint_filename", default="vp1_ppi_model.ckpt", type=str, help="Checkpoint path."
+    )
     parser2.add_argument(
         "--perform_testing_with_checkpoint", default=False, type=bool, help="Perform testing with a specific checkpoint. Will deactivate Training procedure completely."
     )
@@ -106,12 +109,16 @@ def generate_parser():
     idx = [a.dest for a in parser._actions].index('checkpoint_callback')
     parser._actions[idx].default = False
     idx = [a.dest for a in parser._actions].index('accelerator')
-    parser._actions[idx].default = "cpu"
+    parser._actions[idx].default = "gpu"
+
+    idx = [a.dest for a in parser._actions].index('replace_sampler_ddp')
+    parser._actions[idx].default = False
+    
     # from pytorch_lightning.strategies import DDPStrategy
     # ddp = DDPStrategy(process_group_backend="nccl")
     # # strategy=ddp
     idx = [a.dest for a in parser._actions].index('strategy')
-    parser._actions[idx].default = "ddp"
+    parser._actions[idx].default = "dp"
 
     idx = [a.dest for a in parser._actions].index('limit_train_batches')
     parser._actions[idx].default = 1.0
@@ -207,9 +214,12 @@ def main(params: TTNamespace):
     if params.perform_testing_with_checkpoint == False and params.perform_prediction == False:
         if global_rank == 0:
             logger.info("Starting training.")
-    
+        logger.info("Training dataset: " + params.train_csv)
+        for param in model.parameters():
+            param.requires_grad = True
+
         trainer.fit(model)
-        trainer.save_checkpoint(settings.BASE_MODELS_DIR + "/vp1_ppi_model.ckpt")
+        trainer.save_checkpoint(settings.BASE_MODELS_DIR + "/" + params.checkpoint_filename)
     
         if global_rank == 0:
             logger.info("Finishing training.")
