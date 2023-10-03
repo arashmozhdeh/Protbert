@@ -77,9 +77,6 @@ def generate_parser():
     parser2.add_argument(
         "--testing_checkpoint", default=None, type=str, help="File path of checkpoint to be used for testing."
     )
-    parser2.add_argument(
-        "--testing_checkpoint", default=None, type=str, help="File path of checkpoint to be used for testing."
-    )
     # parser2.add_argument(
     #     "--testing_mlflow_study_name", default="ppi-prediction-testing", type=str, help="Name of the mlflow study to be used for testing."
     # )
