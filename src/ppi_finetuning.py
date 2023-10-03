@@ -72,7 +72,7 @@ def generate_parser():
     # Options for testing with specific checkpoint 
     parser2 = parser.add_argument_group(title= "Options for testing with specific checkpoint.")
     parser2.add_argument(
-        "--checkpoint_filename", default=False, type=bool, help="Checkpoint path."
+        "--checkpoint_filename", default="vp1_ppi_model.ckpt", type=str, help="Checkpoint path."
     )
     parser2.add_argument(
         "--testing_checkpoint", default=None, type=str, help="File path of checkpoint to be used for testing."
@@ -219,7 +219,7 @@ def main(params: TTNamespace):
             param.requires_grad = True
 
         trainer.fit(model)
-        trainer.save_checkpoint(settings.BASE_MODELS_DIR + "/vp1_ppi_model"+ +"".ckpt")
+        trainer.save_checkpoint(settings.BASE_MODELS_DIR + "/" + params.checkpoint_filename)
     
         if global_rank == 0:
             logger.info("Finishing training.")
