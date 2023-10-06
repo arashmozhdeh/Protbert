@@ -53,21 +53,21 @@ class CustomBinaryF1Score(torchmetrics.Metric):
     def __init__(self, device):
         super().__init__()
         # Initialize states - TP, FP, FN, TN
-        self.device = device
-        self.true_positives = torch.tensor(0).to(self.device)
-        self.false_positives = torch.tensor(0).to(self.device)
-        self.false_negatives = torch.tensor(0).to(self.device)
-        self.true_negatives = torch.tensor(0).to(self.device)
+        self._device = device
+        self.true_positives = torch.tensor(0).to(device)
+        self.false_positives = torch.tensor(0).to(device)
+        self.false_negatives = torch.tensor(0).to(device)
+        self.true_negatives = torch.tensor(0).to(device)
 
     def update(self, preds, target):
         # Threshold predictions
         preds = (preds >= 0.5).int()
 
         # Update states
-        self.true_positives += torch.sum((preds == 1) & (target == 1)).to(self.device)
-        self.false_positives += torch.sum((preds == 1) & (target == 0)).to(self.device)
-        self.false_negatives += torch.sum((preds == 0) & (target == 1)).to(self.device)
-        self.true_negatives += torch.sum((preds == 0) & (target == 0)).to(self.device)
+        self.true_positives += torch.sum((preds == 1) & (target == 1)).to(self._device)
+        self.false_positives += torch.sum((preds == 1) & (target == 0)).to(self._device)
+        self.false_negatives += torch.sum((preds == 0) & (target == 1)).to(self._device)
+        self.true_negatives += torch.sum((preds == 0) & (target == 0)).to(self._device)
 
     def compute(self):
         # Compute precision and recall
@@ -76,9 +76,9 @@ class CustomBinaryF1Score(torchmetrics.Metric):
 
         # Compute F1 score
         f1 = 2 * (precision * recall) / (precision + recall + 1e-6)
-        precision = precision.to(self.device)
-        recall = recall.to(self.device)
-        f1 = f1.to(self.device)
+        precision = precision.to(self._device)
+        recall = recall.to(self._device)
+        f1 = f1.to(self._device)
         return f1
     
 class ProtBertPPIModel(pl.LightningModule):
