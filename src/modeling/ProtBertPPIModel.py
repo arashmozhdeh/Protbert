@@ -64,6 +64,7 @@ class CustomBinaryF1Score(torchmetrics.Metric):
         preds = preds.to(self._device)
         target = target.to(self._device)
         preds = (preds >= 0.5).int()
+        preds = preds.to(self._device)
 
         # Update states
         self.true_positives += torch.sum((preds == 1) & (target == 1))
