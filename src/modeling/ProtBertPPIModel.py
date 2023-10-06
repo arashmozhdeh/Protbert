@@ -61,6 +61,8 @@ class CustomBinaryF1Score(torchmetrics.Metric):
 
     def update(self, preds, target):
         # Threshold predictions
+        preds = preds.to(self._device)
+        target = target.to(self._device)
         preds = (preds >= 0.5).int()
 
         # Update states
