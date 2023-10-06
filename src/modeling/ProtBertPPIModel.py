@@ -67,10 +67,18 @@ class CustomBinaryF1Score(torchmetrics.Metric):
         preds = preds.to(self._device)
 
         # Update states
-        self.true_positives += torch.sum((preds == 1) & (target == 1), device=self._device)
-        self.false_positives += torch.sum((preds == 1) & (target == 0), device=self._device)
-        self.false_negatives += torch.sum((preds == 0) & (target == 1), device=self._device)
-        self.true_negatives += torch.sum((preds == 0) & (target == 0), device=self._device)
+        # self.true_positives += torch.sum((preds == 1) & (target == 1), device=self._device)
+        temp = (preds == 1) & (target == 1)
+        self.true_positives += torch.sum(temp.to(self._device))
+        temp = (preds == 1) & (target == 0)
+        self.true_positives += torch.sum(temp.to(self._device))
+        temp = (preds == 0) & (target == 1)
+        self.true_positives += torch.sum(temp.to(self._device))
+        temp = (preds == 0) & (target == 0)
+        self.true_positives += torch.sum(temp.to(self._device))
+        # self.false_positives += torch.sum((preds == 1) & (target == 0), device=self._device)
+        # self.false_negatives += torch.sum((preds == 0) & (target == 1), device=self._device)
+        # self.true_negatives += torch.sum((preds == 0) & (target == 0), device=self._device)
 
     def compute(self):
         # Compute precision and recall
