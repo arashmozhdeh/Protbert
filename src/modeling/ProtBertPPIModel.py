@@ -41,6 +41,7 @@ from torchnlp.utils import collate_tensors
 from transformers import BertModel, BertTokenizer, BertConfig
 from transformers.tokenization_utils_base import BatchEncoding
 from transformers.file_utils import TensorType
+import torchmetrics
 
 import settings
 from data.PPIDataset import PPIDataset, Dataset, FewShotSiameseSampler
