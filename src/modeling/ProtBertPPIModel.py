@@ -93,6 +93,8 @@ class ProtBertPPIModel(pl.LightningModule):
 
         self.local_logger = params.local_logger
 
+
+
         # Remove these variables as they cannot be pickled
         # Moreover they can also not be logged with mlflow as deepcopy of these variables do not work
         try:
