@@ -46,6 +46,26 @@ import settings
 from data.PPIDataset import PPIDataset, Dataset, FewShotSiameseSampler
 from utils.ProtBertPPIArgParser import ProtBertPPIArgParser
 
+class CustomBinaryF1Score(torch.nn.Module):
+    def __init__(self, threshold=0.5):
+        super(CustomBinaryF1Score, self).__init__()
+        self.threshold = threshold
+
+    def forward(self, y_pred, y_true):
+        # Binarize predictions
+        y_pred_binarized = (y_pred > self.threshold).float()
+
+        TP = (y_pred_binarized * y_true).sum()
+        FP = (y_pred_binarized * (1 - y_true)).sum()
+        FN = ((1 - y_pred_binarized) * y_true).sum()
+
+        precision = TP / (TP + FP + 1e-8) # added epsilon to avoid division by zero
+        recall = TP / (TP + FN + 1e-8)
+
+        f1 = 2 * (precision * recall) / (precision + recall + 1e-8)
+
+        return f1
+
 class ProtBertPPIModel(pl.LightningModule):
     """
     # https://github.com/minimalist-nlp/lightning-text-classification.git
@@ -108,7 +128,7 @@ class ProtBertPPIModel(pl.LightningModule):
             BinaryAccuracy(), 
             BinaryPrecision(), 
             BinaryRecall(),
-            BinaryF1Score(),
+            CustomBinaryF1Score(),
             BinaryAveragePrecision(),
             BinaryAUROC(),
             BinaryMatthewsCorrCoef(),
@@ -125,7 +145,7 @@ class ProtBertPPIModel(pl.LightningModule):
             BinaryAccuracy(),
             BinaryPrecision(), 
             BinaryRecall(),
-            BinaryF1Score(),
+            CustomBinaryF1Score(),
             BinaryAveragePrecision(),
             BinaryConfusionMatrix(),
             BinaryPrecisionRecallCurve(),
