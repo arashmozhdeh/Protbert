@@ -138,7 +138,6 @@ class ProtBertPPIModel(pl.LightningModule):
             # F1Score(task="multiclass", num_classes=2),
             # AveragePrecision(task="multiclass", num_classes=2),
             # AUROC(task="multiclass", num_classes=2),
-            # MatthewsCorrCoef(task="multiclass", num_classes=2),
         ], prefix='train_')
 
         self.valid_metrics = MetricCollection([
