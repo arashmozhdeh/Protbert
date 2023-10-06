@@ -47,26 +47,36 @@ import settings
 from data.PPIDataset import PPIDataset, Dataset, FewShotSiameseSampler
 from utils.ProtBertPPIArgParser import ProtBertPPIArgParser
 
+
 class CustomBinaryF1Score(torchmetrics.Metric):
-    def __init__(self, threshold=0.5):
-        super(CustomBinaryF1Score, self).__init__()
-        self.threshold = threshold
 
-    def forward(self, y_pred, y_true):
-        # Binarize predictions
-        y_pred_binarized = (y_pred > self.threshold).float()
+    def __init__(self):
+        super().__init__()
+        # Initialize states - TP, FP, FN, TN
+        self.true_positives = torch.tensor(0)
+        self.false_positives = torch.tensor(0)
+        self.false_negatives = torch.tensor(0)
+        self.true_negatives = torch.tensor(0)
 
-        TP = (y_pred_binarized * y_true).sum()
-        FP = (y_pred_binarized * (1 - y_true)).sum()
-        FN = ((1 - y_pred_binarized) * y_true).sum()
+    def update(self, preds, target):
+        # Threshold predictions
+        preds = (preds >= 0.5).int()
 
-        precision = TP / (TP + FP + 1e-8) # added epsilon to avoid division by zero
-        recall = TP / (TP + FN + 1e-8)
+        # Update states
+        self.true_positives += torch.sum((preds == 1) & (target == 1))
+        self.false_positives += torch.sum((preds == 1) & (target == 0))
+        self.false_negatives += torch.sum((preds == 0) & (target == 1))
+        self.true_negatives += torch.sum((preds == 0) & (target == 0))
 
-        f1 = 2 * (precision * recall) / (precision + recall + 1e-8)
+    def compute(self):
+        # Compute precision and recall
+        precision = self.true_positives / (self.true_positives + self.false_positives + 1e-6)
+        recall = self.true_positives / (self.true_positives + self.false_negatives + 1e-6)
 
+        # Compute F1 score
+        f1 = 2 * (precision * recall) / (precision + recall + 1e-6)
         return f1
-
+    
 class ProtBertPPIModel(pl.LightningModule):
     """
     # https://github.com/minimalist-nlp/lightning-text-classification.git
