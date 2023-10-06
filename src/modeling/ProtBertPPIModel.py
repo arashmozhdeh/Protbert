@@ -142,6 +142,7 @@ class ProtBertPPIModel(pl.LightningModule):
             # AUROC(task="multiclass", num_classes=2),
         ], prefix='train_')
 
+
         self.valid_metrics = MetricCollection([
             BinaryAccuracy(),
             BinaryPrecision(), 
