@@ -46,7 +46,7 @@ import settings
 from data.PPIDataset import PPIDataset, Dataset, FewShotSiameseSampler
 from utils.ProtBertPPIArgParser import ProtBertPPIArgParser
 
-class CustomBinaryF1Score(torch.nn.Module):
+class CustomBinaryF1Score(torchmetrics.Metric):
     def __init__(self, threshold=0.5):
         super(CustomBinaryF1Score, self).__init__()
         self.threshold = threshold
