@@ -50,23 +50,24 @@ from utils.ProtBertPPIArgParser import ProtBertPPIArgParser
 
 class CustomBinaryF1Score(torchmetrics.Metric):
 
-    def __init__(self):
+    def __init__(self, device):
         super().__init__()
         # Initialize states - TP, FP, FN, TN
-        self.true_positives = torch.tensor(0)
-        self.false_positives = torch.tensor(0)
-        self.false_negatives = torch.tensor(0)
-        self.true_negatives = torch.tensor(0)
+        self.device = device
+        self.true_positives = torch.tensor(0).to(self.device)
+        self.false_positives = torch.tensor(0).to(self.device)
+        self.false_negatives = torch.tensor(0).to(self.device)
+        self.true_negatives = torch.tensor(0).to(self.device)
 
     def update(self, preds, target):
         # Threshold predictions
         preds = (preds >= 0.5).int()
 
         # Update states
-        self.true_positives += torch.sum((preds == 1) & (target == 1))
-        self.false_positives += torch.sum((preds == 1) & (target == 0))
-        self.false_negatives += torch.sum((preds == 0) & (target == 1))
-        self.true_negatives += torch.sum((preds == 0) & (target == 0))
+        self.true_positives += torch.sum((preds == 1) & (target == 1)).to(self.device)
+        self.false_positives += torch.sum((preds == 1) & (target == 0)).to(self.device)
+        self.false_negatives += torch.sum((preds == 0) & (target == 1)).to(self.device)
+        self.true_negatives += torch.sum((preds == 0) & (target == 0)).to(self.device)
 
     def compute(self):
         # Compute precision and recall
@@ -75,6 +76,9 @@ class CustomBinaryF1Score(torchmetrics.Metric):
 
         # Compute F1 score
         f1 = 2 * (precision * recall) / (precision + recall + 1e-6)
+        precision = precision.to(self.device)
+        recall = recall.to(self.device)
+        f1 = f1.to(self.device)
         return f1
     
 class ProtBertPPIModel(pl.LightningModule):
