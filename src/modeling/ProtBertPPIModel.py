@@ -54,10 +54,10 @@ class CustomBinaryF1Score(torchmetrics.Metric):
         super().__init__()
         # Initialize states - TP, FP, FN, TN
         self._device = device
-        self.true_positives = torch.tensor(0).to(device)
-        self.false_positives = torch.tensor(0).to(device)
-        self.false_negatives = torch.tensor(0).to(device)
-        self.true_negatives = torch.tensor(0).to(device)
+        self.true_positives = torch.tensor(0, device)
+        self.false_positives = torch.tensor(0, device)
+        self.false_negatives = torch.tensor(0, device)
+        self.true_negatives = torch.tensor(0, device)
 
     def update(self, preds, target):
         # Threshold predictions
