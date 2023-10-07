@@ -225,7 +225,7 @@ class ProtBertPPIModel(pl.LightningModule):
         
         config = BertConfig.from_pretrained(self.model_name)
         config.gradient_checkpointing = True
-        print("ProtBertBFD self.device", self.device)
+        # print("ProtBertBFD self.device", self.device)
         self.ProtBertBFD = BertModel.from_pretrained(self.model_name, config=config).to(self.device)
         self.encoder_features = 1024
 
