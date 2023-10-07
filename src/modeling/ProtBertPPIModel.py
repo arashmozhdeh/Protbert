@@ -76,20 +76,20 @@ class CustomBinaryF1Score(torchmetrics.Metric):
 
         # Update states
         # self.true_positives += torch.sum((preds == 1) & (target == 1), device=self._device)
-        temp = (preds == 1) & (target == 1)
+        temp = (preds == 0) & (target == 0)
         # print("temp", self.temp.device)
         # print("torch.sum(temp.to(self._device)).to(self._device)", torch.sum(temp.to(self._device)).to(self._device).device)
         self.true_positives += torch.sum(temp.to(self._device)).to(self._device)
-        temp = (preds == 1) & (target == 0)
-        self.false_positives += torch.sum(temp.to(self._device)).to(self._device)
         temp = (preds == 0) & (target == 1)
+        self.false_positives += torch.sum(temp.to(self._device)).to(self._device)
+        temp = (preds == 1) & (target == 0)
         self.false_negatives += torch.sum(temp.to(self._device)).to(self._device)
-        temp = (preds == 0) & (target == 0)
+        temp = (preds == 1) & (target == 1)
         self.true_negatives += torch.sum(temp.to(self._device)).to(self._device)
-        print("self.true_positives", self.true_positives)
-        print("self.false_positives", self.false_positives)
-        print("self.false_negatives", self.false_negatives)
-        print("self.true_positives", self.true_negatives)
+        # print("self.true_positives", self.true_positives)
+        # print("self.false_positives", self.false_positives)
+        # print("self.false_negatives", self.false_negatives)
+        # print("self.true_negatives", self.true_negatives)
         # self.false_positives += torch.sum((preds == 1) & (target == 0), device=self._device)
         # self.false_negatives += torch.sum((preds == 0) & (target == 1), device=self._device)
         # self.true_negatives += torch.sum((preds == 0) & (target == 0), device=self._device)
@@ -98,8 +98,8 @@ class CustomBinaryF1Score(torchmetrics.Metric):
         # Compute precision and recall
         precision = self.true_positives / (self.true_positives + self.false_positives + 1e-6)
         recall = self.true_positives / (self.true_positives + self.false_negatives + 1e-6)
-        print("recall", recall)
-        print("precision", precision)
+        # print("recall", recall)
+        # print("precision", precision)
         # Compute F1 score
         f1 = 2 * (precision * recall) / (precision + recall + 1e-6)
         precision = precision.to(self._device)
@@ -171,7 +171,7 @@ class ProtBertPPIModel(pl.LightningModule):
             BinaryAccuracy(), 
             BinaryPrecision(), 
             BinaryRecall(),
-            CustomBinaryF1Score(self.device),
+            BinaryF1Score(),
             BinaryAveragePrecision(),
             BinaryAUROC(),
             BinaryMatthewsCorrCoef(),
