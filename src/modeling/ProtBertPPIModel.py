@@ -59,10 +59,10 @@ class CustomBinaryF1Score(torchmetrics.Metric):
         self.false_negatives = torch.tensor(0, device=device)
         self.true_negatives = torch.tensor(0, device=device)
 
-        print("self.true_positives", self.true_positives.device)
-        print("self.false_positives", self.false_positives.device)
-        print("self.false_negatives", self.false_negatives.device)
-        print("self.true_negatives", self.true_negatives.device)
+        # print("self.true_positives", self.true_positives.device)
+        # print("self.false_positives", self.false_positives.device)
+        # print("self.false_negatives", self.false_negatives.device)
+        # print("self.true_negatives", self.true_negatives.device)
 
     def update(self, preds, target):
         # Threshold predictions
@@ -71,14 +71,14 @@ class CustomBinaryF1Score(torchmetrics.Metric):
         preds = (preds >= 0.5).int()
         preds = preds.to(self._device)
 
-        print("preds", self.preds.device)
-        print("target", self.target.device)
+        # print("preds", self.preds.device)
+        # print("target", self.target.device)
 
         # Update states
         # self.true_positives += torch.sum((preds == 1) & (target == 1), device=self._device)
         temp = (preds == 1) & (target == 1)
-        print("temp", self.temp.device)
-        print("torch.sum(temp.to(self._device)).to(self._device)", torch.sum(temp.to(self._device)).to(self._device).device)
+        # print("temp", self.temp.device)
+        # print("torch.sum(temp.to(self._device)).to(self._device)", torch.sum(temp.to(self._device)).to(self._device).device)
         self.true_positives += torch.sum(temp.to(self._device)).to(self._device)
         temp = (preds == 1) & (target == 0)
         self.true_positives += torch.sum(temp.to(self._device)).to(self._device)
@@ -161,7 +161,7 @@ class ProtBertPPIModel(pl.LightningModule):
         self.dataset = PPIDataset()
         
         # self.dataset.calculate_stat(self.hparams.train_csv)
-
+        print("MetricCollection self.device", self.device)
         self.train_metrics = MetricCollection([
             BinaryAccuracy(), 
             BinaryPrecision(), 
@@ -220,6 +220,7 @@ class ProtBertPPIModel(pl.LightningModule):
         
         config = BertConfig.from_pretrained(self.model_name)
         config.gradient_checkpointing = True
+        print("ProtBertBFD self.device", self.device)
         self.ProtBertBFD = BertModel.from_pretrained(self.model_name, config=config).to(self.device)
         self.encoder_features = 1024
 
