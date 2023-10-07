@@ -122,7 +122,7 @@ class ProtBertPPIModel(pl.LightningModule):
             params (dict or TTNamespace): Dictionary or TTNamespace of params. Automatic conversion to TTNamespace if it's a dict.
         """
         super().__init__()
-        self.device = "cuda"
+        self.to("cuda")
         # While loading the checkpoint, params are used as dictionary
         if isinstance(params, dict):
             params = TTNamespace(**params)
