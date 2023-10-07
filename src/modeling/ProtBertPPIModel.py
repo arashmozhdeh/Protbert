@@ -48,6 +48,51 @@ from data.PPIDataset import PPIDataset, Dataset, FewShotSiameseSampler
 from utils.ProtBertPPIArgParser import ProtBertPPIArgParser
 
 
+class CustomBinaryPrecision(torchmetrics.Metric):
+    
+    def __init__(self, device):
+        super().__init__()
+        self._device = device
+        self.true_positives = torch.tensor(0, device=device)
+        self.false_positives = torch.tensor(0, device=device)
+
+    def update(self, preds, target):
+        preds = preds.to(self._device)
+        target = target.to(self._device)
+        preds = (preds >= 0.5).int()
+        preds = preds.to(self._device)
+        temp = (preds == 0) & (target == 0)
+        self.true_positives += torch.sum(temp.to(self._device)).to(self._device)
+        temp = (preds == 0) & (target == 1)
+        self.false_positives += torch.sum(temp.to(self._device)).to(self._device)
+
+    def compute(self):
+        precision = self.true_positives / (self.true_positives + self.false_positives + 1e-6)
+        precision = precision.to(self._device)
+        return precision
+
+class CustomBinaryRecall(torchmetrics.Metric):
+    def __init__(self, device):
+        super().__init__()
+        self._device = device
+        self.true_positives = torch.tensor(0, device=device)
+        self.false_negatives = torch.tensor(0, device=device)
+
+    def update(self, preds, target):
+            preds = preds.to(self._device)
+            target = target.to(self._device)
+            preds = (preds >= 0.5).int()
+            preds = preds.to(self._device)
+            temp = (preds == 0) & (target == 0)
+            self.true_positives += torch.sum(temp.to(self._device)).to(self._device)
+            temp = (preds == 1) & (target == 0)
+            self.false_negatives += torch.sum(temp.to(self._device)).to(self._device)
+
+    def compute(self):
+        recall = self.true_positives / (self.true_positives + self.false_negatives + 1e-6)
+        recall = recall.to(self._device)
+        return recall
+
 class CustomBinaryF1Score(torchmetrics.Metric):
 
     def __init__(self, device):
@@ -65,20 +110,11 @@ class CustomBinaryF1Score(torchmetrics.Metric):
         # print("self.true_negatives", self.true_negatives.device)
 
     def update(self, preds, target):
-        # Threshold predictions
         preds = preds.to(self._device)
         target = target.to(self._device)
         preds = (preds >= 0.5).int()
         preds = preds.to(self._device)
-
-        # print("preds", self.preds.device)
-        # print("target", self.target.device)
-
-        # Update states
-        # self.true_positives += torch.sum((preds == 1) & (target == 1), device=self._device)
         temp = (preds == 0) & (target == 0)
-        # print("temp", self.temp.device)
-        # print("torch.sum(temp.to(self._device)).to(self._device)", torch.sum(temp.to(self._device)).to(self._device).device)
         self.true_positives += torch.sum(temp.to(self._device)).to(self._device)
         temp = (preds == 0) & (target == 1)
         self.false_positives += torch.sum(temp.to(self._device)).to(self._device)
@@ -86,21 +122,10 @@ class CustomBinaryF1Score(torchmetrics.Metric):
         self.false_negatives += torch.sum(temp.to(self._device)).to(self._device)
         temp = (preds == 1) & (target == 1)
         self.true_negatives += torch.sum(temp.to(self._device)).to(self._device)
-        # print("self.true_positives", self.true_positives)
-        # print("self.false_positives", self.false_positives)
-        # print("self.false_negatives", self.false_negatives)
-        # print("self.true_negatives", self.true_negatives)
-        # self.false_positives += torch.sum((preds == 1) & (target == 0), device=self._device)
-        # self.false_negatives += torch.sum((preds == 0) & (target == 1), device=self._device)
-        # self.true_negatives += torch.sum((preds == 0) & (target == 0), device=self._device)
 
     def compute(self):
-        # Compute precision and recall
         precision = self.true_positives / (self.true_positives + self.false_positives + 1e-6)
         recall = self.true_positives / (self.true_positives + self.false_negatives + 1e-6)
-        # print("recall", recall)
-        # print("precision", precision)
-        # Compute F1 score
         f1 = 2 * (precision * recall) / (precision + recall + 1e-6)
         precision = precision.to(self._device)
         recall = recall.to(self._device)
@@ -185,15 +210,16 @@ class ProtBertPPIModel(pl.LightningModule):
 
         self.valid_metrics = MetricCollection([
             BinaryAccuracy(),
-            BinaryPrecision(), 
-            BinaryRecall(),
+            CustomBinaryPrecision(self.device), 
+            CustomBinaryRecall(self.device),
             CustomBinaryF1Score(self.device),
-            BinaryAveragePrecision(),
-            BinaryConfusionMatrix(),
+            # BinaryAveragePrecision(),
+            # BinaryConfusionMatrix(),
             BinaryPrecisionRecallCurve(),
             BinaryAUROC(),
             BinaryROC(),
-            BinaryMatthewsCorrCoef(),
+            # BinaryMatthewsCorrCoef(),
+
             # Accuracy(task="multiclass", num_classes=2), 
             # Precision(task="multiclass", num_classes=2), 
             # Recall(task="multiclass", num_classes=2), 
