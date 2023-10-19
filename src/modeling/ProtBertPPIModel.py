@@ -663,13 +663,13 @@ class ProtBertPPIModel(pl.LightningModule):
     #     self.current_test_epoch += 1
 
     def predict_step(self, batch: tuple, batch_nb: int, *args, **kwargs) -> dict:
-        print(len(batch))
-        print(batch)
-        inputs_A, inputs_B, _ = batch
-        # inputs_A = inputs_A.to(self.device)
-        # inputs_B = inputs_B.to(self.device)
-        print(inputs_A)
-        print(inputs_B)
+        # print(len(batch))
+        # print(batch)
+        inputs_A, inputs_B, collated_samples = batch
+        inputs_A = inputs_A.to(self.device)
+        inputs_B = inputs_B.to(self.device)
+        # print(inputs_A)
+        # print(inputs_B)
         # for key in targets:
         #     targets[key] = targets[key].to(self.device)
         model_out_A = self.forward(**inputs_A).to(self.device)
@@ -678,7 +678,7 @@ class ProtBertPPIModel(pl.LightningModule):
 
         preds = classifier_output["logits"]
         preds = self.sigmoid(preds)
-
+        print(preds)
         collated_samples["probability"] = [p.item() for p in preds]
 
         return collated_samples
