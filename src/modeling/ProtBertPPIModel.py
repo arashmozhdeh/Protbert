@@ -678,7 +678,7 @@ class ProtBertPPIModel(pl.LightningModule):
 
         preds = classifier_output["logits"]
         preds = self.sigmoid(preds)
-        print(preds)
+        # print(preds)
         collated_samples["probability"] = [p.item() for p in preds]
 
         return collated_samples
