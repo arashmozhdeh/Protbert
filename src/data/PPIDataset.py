@@ -345,6 +345,21 @@ class PPIDataset():
             })
         return collated_dataset
 
+    def collate_lists(self, seqA: list, seqB: list) -> list:
+
+        """ Converts each line into a dictionary. """
+        collated_dataset = []
+        for i in range(len(seqA)):
+            collated_dataset.append({
+                "seqA": str(seqA[i]), 
+                "seqB": str(seqB[i]), 
+                # "protA_ids": str(protA_ids[i]).split(","), 
+                # "protB_ids": str(protB_ids[i]).split(","), 
+                # "ncbi_geneA_id": str(ncbi_geneA_id[i]), 
+                # "ncbi_geneB_id": str(ncbi_geneB_id[i]), 
+            })
+        return collated_dataset
+
     def _retrieve_dataframe(self, path) -> DataFrame:
         column_names = [
             'SeqA', 'SeqB',
@@ -369,6 +384,16 @@ class PPIDataset():
         df: DataFrame = pd.read_csv(path, names=column_names, header=0) #type:ignore
         SeqA = list(df['SeqA'])
         SeqB = list(df['SeqB'])
+        seqA = [" ".join("".join(sample.split())) for sample in seqA]
+        seqA = [re.sub(r"[UZOB]", "X", sample) for sample in seqA]
+        
+        seqB = [" ".join("".join(sample.split())) for sample in seqB]
+        seqB = [re.sub(r"[UZOB]", "X", sample) for sample in seqB]
+        # assert len(protA_ids) == len(labels)
+        # assert len(protB_ids) == len(labels)
+        
+        # return Dataset(self.collate_lists(seqA, seqB, labels, protA_ids, protB_ids, ncbi_geneA_id, ncbi_geneB_id))
+        return Dataset(self.collate_lists(seqA, seqB))
     # def load_predict_dataset(self, path):
     #     column_names = [
     #         "interaction", "probability",
