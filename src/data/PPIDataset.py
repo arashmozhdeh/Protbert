@@ -362,6 +362,13 @@ class PPIDataset():
         df = self._retrieve_dataframe(path)
         self.nSamples_dic = df['class'].value_counts()
 
+    def load_predict_dataset(self, path):
+        column_names = [
+            "SeqA", "SeqB"
+        ] 
+        df: DataFrame = pd.read_csv(path, names=column_names, header=0) #type:ignore
+        SeqA = list(df['SeqA'])
+        SeqB = list(df['SeqB'])
     # def load_predict_dataset(self, path):
     #     column_names = [
     #         "interaction", "probability",

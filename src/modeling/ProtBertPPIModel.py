@@ -574,9 +574,21 @@ class ProtBertPPIModel(pl.LightningModule):
             - dictionary passed to the validation_end function.
         """
         test_loss, trues, preds = self.__single_step(batch)
-
         self.test_metrics.update(preds, trues)
-        
+        # metrics = self.valid_metrics.compute()  # compute the metrics after updating
+    
+        metrics = self.test_metrics.compute()
+
+        words = ["BinaryAccuracy", "BinaryPrecision", "BinaryRecall", "BinaryF1Score", "BinaryAveragePrecision"]
+
+        for name, value in metrics.items():
+            found_words = list(filter(lambda word: word in name, words))
+            if found_words:
+                try:
+                    self.log(name, value, on_step=True, on_epoch=True, prog_bar=True)
+                except Exception as e:
+                    pass
+
         output = OrderedDict({
             'test_loss': test_loss,
         })
@@ -584,7 +596,7 @@ class ProtBertPPIModel(pl.LightningModule):
         return output
 
     def test_epoch_end(self, outputs: list) -> None:
-        """ Function that takes as input a list of dictionaries returned by the test_step
+        """ Function that takes as input a list of dictionaries returned by the validation_step
         function and measures the model performance accross the entire validation set.
         """
         test_loss = torch.stack([x['test_loss'] for x in outputs]).mean()
@@ -593,17 +605,59 @@ class ProtBertPPIModel(pl.LightningModule):
         self.test_metrics.reset()
 
         self.log('test_loss', test_loss, on_epoch=True, prog_bar=True)
-        
-        #self.log_roc_graph(result, self.test_metrics.prefix)
-        #self.log_prc_graph(result, self.test_metrics.prefix)
 
-        # do not log ROC and PRC
         result.pop(self.test_metrics.prefix + 'ROC', None)
         result.pop(self.test_metrics.prefix + 'PrecisionRecallCurve', None)
         result.pop(self.test_metrics.prefix + 'ConfusionMatrix', torch.Tensor([[-1,-1],[-1,-1]]))
-        self.log_dict(result, on_epoch=True)
-
+        # print(result)
+        # self.log_dict(result, on_epoch=True)
+        for idx, (key, value) in enumerate(result.items()):
+            if isinstance(value, tuple):
+                for sub_idx, tensor in enumerate(value):
+                    self.log(f"{key}_{sub_idx}", tensor)
+            else:
+                self.log(f"{key}", value)
+        
         self.current_test_epoch += 1
+
+
+
+    # def test_step(self, batch: tuple, batch_nb: int, *args, **kwargs) -> dict:
+    #     """ Similar to the training step but with the model in eval mode.
+    #     Returns:
+    #         - dictionary passed to the validation_end function.
+    #     """
+    #     test_loss, trues, preds = self.__single_step(batch)
+
+    #     self.test_metrics.update(preds, trues)
+        
+    #     output = OrderedDict({
+    #         'test_loss': test_loss,
+    #     })
+
+    #     return output
+
+    # def test_epoch_end(self, outputs: list) -> None:
+    #     """ Function that takes as input a list of dictionaries returned by the test_step
+    #     function and measures the model performance accross the entire validation set.
+    #     """
+    #     test_loss = torch.stack([x['test_loss'] for x in outputs]).mean()
+
+    #     result = self.test_metrics.compute()
+    #     self.test_metrics.reset()
+
+    #     self.log('test_loss', test_loss, on_epoch=True, prog_bar=True)
+        
+    #     #self.log_roc_graph(result, self.test_metrics.prefix)
+    #     #self.log_prc_graph(result, self.test_metrics.prefix)
+
+    #     # do not log ROC and PRC
+    #     result.pop(self.test_metrics.prefix + 'ROC', None)
+    #     result.pop(self.test_metrics.prefix + 'PrecisionRecallCurve', None)
+    #     result.pop(self.test_metrics.prefix + 'ConfusionMatrix', torch.Tensor([[-1,-1],[-1,-1]]))
+    #     self.log_dict(result, on_epoch=True)
+
+    #     self.current_test_epoch += 1
 
     def predict_step(self, batch: tuple, batch_nb: int, *args, **kwargs) -> dict:
         inputs_A, inputs_B, targets = batch

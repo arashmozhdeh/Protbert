@@ -31,7 +31,11 @@ class MetricsCallback(Callback):
     def on_validation_epoch_end(self, trainer: Trainer, pl_module):
         self.epochs.append(copy.deepcopy(trainer.current_epoch)) # type: ignore
         self.epoch_metrics.append(copy.deepcopy(trainer.callback_metrics))
-    
+
+    def on_test_epoch_end(self, trainer: Trainer, pl_module):
+        self.epochs.append(copy.deepcopy(trainer.current_epoch)) # type: ignore
+        self.epoch_metrics.append(copy.deepcopy(trainer.callback_metrics))
+
     def on_train_end(self, trainer, pl_module):
         if isinstance(trainer.logger.experiment, MlflowClient):
             self.mlflow_run_id = trainer.logger.run_id  # type: ignore

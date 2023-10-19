@@ -262,7 +262,7 @@ def main(params: TTNamespace):
             results = results.append(pd.DataFrame.from_dict(prediction), ignore_index=True)
 
         logger.info("Writing predictions in file: %s", params.prediction_output_file)
-        results = results.rename(columns={'seqA': "receptor_protein_sequence", "seqB": "capsid_protein_sequence"})
+        # results = results.rename(columns={'seqA': "receptor_protein_sequence", "seqB": "capsid_protein_sequence"})
         results.to_csv(params.prediction_output_file, sep="\t", index=False)
 
         logger.info("Model predictions: %s", results)
