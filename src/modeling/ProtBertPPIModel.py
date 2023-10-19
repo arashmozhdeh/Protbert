@@ -665,7 +665,7 @@ class ProtBertPPIModel(pl.LightningModule):
     def predict_step(self, batch: tuple, batch_nb: int, *args, **kwargs) -> dict:
         # print(len(batch))
         # print(batch)
-        inputs_A, inputs_B, *_ = batch
+        *_, inputs_A, inputs_B = batch
         inputs_A = inputs_A.to(self.device)
         inputs_B = inputs_B.to(self.device)
         print(inputs_A)
