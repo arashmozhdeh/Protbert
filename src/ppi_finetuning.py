@@ -204,7 +204,8 @@ def main(params: TTNamespace):
         params.callbacks.append(early_stop_callback)
 
     # Add trainer params from outside: https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#trainer-in-python-scripts
-    trainer = Trainer.from_argparse_args(params)
+    # trainer = Trainer.from_argparse_args(params)
+    trainer = Trainer.from_argparse_args(params, logger=False)
 
     # INIT LIGHTNING MODEL
     model = ProtBertPPIModel(params)
@@ -254,7 +255,7 @@ def main(params: TTNamespace):
 
         model.hparams.predict_csv = params.predict_csv
         model.hparams.per_device_predict_batch_size = params.per_device_predict_batch_size
-        predictions = trainer.predict(model, logger=False)
+        predictions = trainer.predict(model)
 
         import pandas as pd
         results = pd.DataFrame()
