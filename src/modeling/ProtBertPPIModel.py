@@ -210,9 +210,12 @@ class ProtBertPPIModel(pl.LightningModule):
 
         self.valid_metrics = MetricCollection([
             BinaryAccuracy(),
-            CustomBinaryPrecision(self.device), 
-            CustomBinaryRecall(self.device),
-            CustomBinaryF1Score(self.device),
+            BinaryPrecision(), 
+            BinaryRecall(),
+            BinaryF1Score(),
+            # CustomBinaryPrecision(self.device), 
+            # CustomBinaryRecall(self.device),
+            # CustomBinaryF1Score(self.device),
             # BinaryAveragePrecision(),
             # BinaryConfusionMatrix(),
             BinaryPrecisionRecallCurve(),
