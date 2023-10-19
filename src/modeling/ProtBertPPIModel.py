@@ -666,8 +666,8 @@ class ProtBertPPIModel(pl.LightningModule):
         # print(len(batch))
         # print(batch)
         *_, inputs_A, inputs_B = batch
-        inputs_A = inputs_A.to(self.device)
-        inputs_B = inputs_B.to(self.device)
+        # inputs_A = inputs_A.to(self.device)
+        # inputs_B = inputs_B.to(self.device)
         print(inputs_A)
         print(inputs_B)
         # for key in targets:
