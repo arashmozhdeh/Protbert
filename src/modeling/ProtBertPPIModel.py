@@ -48,89 +48,89 @@ from data.PPIDataset import PPIDataset, Dataset, FewShotSiameseSampler
 from utils.ProtBertPPIArgParser import ProtBertPPIArgParser
 
 
-class CustomBinaryPrecision(torchmetrics.Metric):
+# class CustomBinaryPrecision(torchmetrics.Metric):
     
-    def __init__(self, device):
-        super().__init__()
-        self._device = device
-        self.true_positives = torch.tensor(0, device=device)
-        self.false_positives = torch.tensor(0, device=device)
+#     def __init__(self, device):
+#         super().__init__()
+#         self._device = device
+#         self.true_positives = torch.tensor(0, device=device)
+#         self.false_positives = torch.tensor(0, device=device)
 
-    def update(self, preds, target):
-        preds = preds.to(self._device)
-        target = target.to(self._device)
-        preds = (preds >= 0.5).int()
-        preds = preds.to(self._device)
-        temp = (preds == 0) & (target == 0)
-        self.true_positives += torch.sum(temp.to(self._device)).to(self._device)
-        temp = (preds == 0) & (target == 1)
-        self.false_positives += torch.sum(temp.to(self._device)).to(self._device)
+#     def update(self, preds, target):
+#         preds = preds.to(self._device)
+#         target = target.to(self._device)
+#         preds = (preds >= 0.5).int()
+#         preds = preds.to(self._device)
+#         temp = (preds == 0) & (target == 0)
+#         self.true_positives += torch.sum(temp.to(self._device)).to(self._device)
+#         temp = (preds == 0) & (target == 1)
+#         self.false_positives += torch.sum(temp.to(self._device)).to(self._device)
 
-    def compute(self):
-        precision = self.true_positives / (self.true_positives + self.false_positives + 1e-6)
-        precision = precision.to(self._device)
-        return precision
+#     def compute(self):
+#         precision = self.true_positives / (self.true_positives + self.false_positives + 1e-6)
+#         precision = precision.to(self._device)
+#         return precision
 
-class CustomBinaryRecall(torchmetrics.Metric):
-    def __init__(self, device):
-        super().__init__()
-        self._device = device
-        self.true_positives = torch.tensor(0, device=device)
-        self.false_negatives = torch.tensor(0, device=device)
+# class CustomBinaryRecall(torchmetrics.Metric):
+#     def __init__(self, device):
+#         super().__init__()
+#         self._device = device
+#         self.true_positives = torch.tensor(0, device=device)
+#         self.false_negatives = torch.tensor(0, device=device)
 
-    def update(self, preds, target):
-            preds = preds.to(self._device)
-            target = target.to(self._device)
-            preds = (preds >= 0.5).int()
-            preds = preds.to(self._device)
-            temp = (preds == 0) & (target == 0)
-            self.true_positives += torch.sum(temp.to(self._device)).to(self._device)
-            temp = (preds == 1) & (target == 0)
-            self.false_negatives += torch.sum(temp.to(self._device)).to(self._device)
+#     def update(self, preds, target):
+#             preds = preds.to(self._device)
+#             target = target.to(self._device)
+#             preds = (preds >= 0.5).int()
+#             preds = preds.to(self._device)
+#             temp = (preds == 0) & (target == 0)
+#             self.true_positives += torch.sum(temp.to(self._device)).to(self._device)
+#             temp = (preds == 1) & (target == 0)
+#             self.false_negatives += torch.sum(temp.to(self._device)).to(self._device)
 
-    def compute(self):
-        recall = self.true_positives / (self.true_positives + self.false_negatives + 1e-6)
-        recall = recall.to(self._device)
-        return recall
+#     def compute(self):
+#         recall = self.true_positives / (self.true_positives + self.false_negatives + 1e-6)
+#         recall = recall.to(self._device)
+#         return recall
 
-class CustomBinaryF1Score(torchmetrics.Metric):
+# class CustomBinaryF1Score(torchmetrics.Metric):
 
-    def __init__(self, device):
-        super().__init__()
-        # Initialize states - TP, FP, FN, TN
-        self._device = device
-        self.true_positives = torch.tensor(0, device=device)
-        self.false_positives = torch.tensor(0, device=device)
-        self.false_negatives = torch.tensor(0, device=device)
-        self.true_negatives = torch.tensor(0, device=device)
+#     def __init__(self, device):
+#         super().__init__()
+#         # Initialize states - TP, FP, FN, TN
+#         self._device = device
+#         self.true_positives = torch.tensor(0, device=device)
+#         self.false_positives = torch.tensor(0, device=device)
+#         self.false_negatives = torch.tensor(0, device=device)
+#         self.true_negatives = torch.tensor(0, device=device)
 
-        # print("self.true_positives", self.true_positives.device)
-        # print("self.false_positives", self.false_positives.device)
-        # print("self.false_negatives", self.false_negatives.device)
-        # print("self.true_negatives", self.true_negatives.device)
+#         # print("self.true_positives", self.true_positives.device)
+#         # print("self.false_positives", self.false_positives.device)
+#         # print("self.false_negatives", self.false_negatives.device)
+#         # print("self.true_negatives", self.true_negatives.device)
 
-    def update(self, preds, target):
-        preds = preds.to(self._device)
-        target = target.to(self._device)
-        preds = (preds >= 0.5).int()
-        preds = preds.to(self._device)
-        temp = (preds == 0) & (target == 0)
-        self.true_positives += torch.sum(temp.to(self._device)).to(self._device)
-        temp = (preds == 0) & (target == 1)
-        self.false_positives += torch.sum(temp.to(self._device)).to(self._device)
-        temp = (preds == 1) & (target == 0)
-        self.false_negatives += torch.sum(temp.to(self._device)).to(self._device)
-        temp = (preds == 1) & (target == 1)
-        self.true_negatives += torch.sum(temp.to(self._device)).to(self._device)
+#     def update(self, preds, target):
+#         preds = preds.to(self._device)
+#         target = target.to(self._device)
+#         preds = (preds >= 0.5).int()
+#         preds = preds.to(self._device)
+#         temp = (preds == 0) & (target == 0)
+#         self.true_positives += torch.sum(temp.to(self._device)).to(self._device)
+#         temp = (preds == 0) & (target == 1)
+#         self.false_positives += torch.sum(temp.to(self._device)).to(self._device)
+#         temp = (preds == 1) & (target == 0)
+#         self.false_negatives += torch.sum(temp.to(self._device)).to(self._device)
+#         temp = (preds == 1) & (target == 1)
+#         self.true_negatives += torch.sum(temp.to(self._device)).to(self._device)
 
-    def compute(self):
-        precision = self.true_positives / (self.true_positives + self.false_positives + 1e-6)
-        recall = self.true_positives / (self.true_positives + self.false_negatives + 1e-6)
-        f1 = 2 * (precision * recall) / (precision + recall + 1e-6)
-        precision = precision.to(self._device)
-        recall = recall.to(self._device)
-        f1 = f1.to(self._device)
-        return f1
+#     def compute(self):
+#         precision = self.true_positives / (self.true_positives + self.false_positives + 1e-6)
+#         recall = self.true_positives / (self.true_positives + self.false_negatives + 1e-6)
+#         f1 = 2 * (precision * recall) / (precision + recall + 1e-6)
+#         precision = precision.to(self._device)
+#         recall = recall.to(self._device)
+#         f1 = f1.to(self._device)
+#         return f1
     
 class ProtBertPPIModel(pl.LightningModule):
     """
