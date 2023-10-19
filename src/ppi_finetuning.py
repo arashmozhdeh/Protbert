@@ -254,7 +254,7 @@ def main(params: TTNamespace):
 
         model.hparams.predict_csv = params.predict_csv
         model.hparams.per_device_predict_batch_size = params.per_device_predict_batch_size
-        predictions = trainer.predict(model)
+        predictions = trainer.predict(model, logger=False)
 
         import pandas as pd
         results = pd.DataFrame()
