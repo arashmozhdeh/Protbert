@@ -382,8 +382,8 @@ class PPIDataset():
             "SeqA", "SeqB"
         ] 
         df: DataFrame = pd.read_csv(path, names=column_names, header=0) #type:ignore
-        SeqA = list(df['SeqA'])
-        SeqB = list(df['SeqB'])
+        seqA = list(df['SeqA'])
+        seqB = list(df['SeqB'])
         seqA = [" ".join("".join(sample.split())) for sample in seqA]
         seqA = [re.sub(r"[UZOB]", "X", sample) for sample in seqA]
         
