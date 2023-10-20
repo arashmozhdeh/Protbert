@@ -260,7 +260,7 @@ def main(params: TTNamespace):
         import pandas as pd
         results = pd.DataFrame()
         for prediction in predictions:
-            results = results.append(pd.DataFrame.from_dict(prediction), ignore_index=True)
+            results = pd.concat([results, pd.DataFrame.from_dict(prediction)], ignore_index=True)
 
         logger.info("Writing predictions in file: %s", params.prediction_output_file)
         # results = results.rename(columns={'seqA': "receptor_protein_sequence", "seqB": "capsid_protein_sequence"})
