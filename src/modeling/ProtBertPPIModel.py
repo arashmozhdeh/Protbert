@@ -893,7 +893,7 @@ class ProtBertPPIModel(pl.LightningModule):
             dataset=self._predict_dataset,
             batch_size=self.hparams.per_device_predict_batch_size,
             collate_fn=self.prepare_sample_without_target,
-            num_workers=0,
+            num_workers=16,
         )
 
     @staticmethod
